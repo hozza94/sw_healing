@@ -2,7 +2,18 @@ from logging.config import fileConfig
 import os
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+
 from alembic import context
+
+# 환경변수에서 데이터베이스 URL 가져오기
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://healing_user:your_password@localhost:5432/suwon_healing")
+
+# 설정에 데이터베이스 URL 설정
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
+
+# 모델 import
+from app.models import Base
+target_metadata = Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,16 +28,6 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-
-# 환경변수에서 데이터베이스 URL 가져오기
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://healing_user:your_password@localhost:5432/suwon_healing")
-
-# 설정에 데이터베이스 URL 설정
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
-
-# 모델 import (나중에 모델이 생성되면 주석 해제)
-# from app.models import Base
-# target_metadata = Base.metadata
 target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
