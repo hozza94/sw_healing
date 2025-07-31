@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: suwon-healing-db
+    image: postgres:13
+    environment:
+      POSTGRES_DB: suwon_healing
+      POSTGRES_USER: healing_user
+      POSTGRES_PASSWORD: your_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - suwon_healing_network
+
+  backend:
+    container_name: suwon-healing-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://healing_user:your_password@postgres:5432/suwon_healing
+      SECRET_KEY: your-secret-key-here
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+    networks:
+      - suwon_healing_network
+
+  frontend:
+    container_name: suwon-healing-web
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - suwon_healing_network
+
+volumes:
+  postgres_data:
+
+networks:
+  suwon_healing_network:
+    driver: bridge 
