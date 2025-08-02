@@ -1,30 +1,26 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '../common';
+import Link from 'next/link';
 
-const navigationItems = [
-  { to: '/', label: '홈' },
-  { to: '/consultation', label: '상담신청' },
-  { to: '/inquiry', label: '상담조회' },
-  { to: '/reviews', label: '상담후기' }
+const navigation = [
+  { name: '홈', href: '/' },
+  { name: '센터 소개', href: '/about' },
+  { name: '상담 신청', href: '/consultation' },
+  { name: '상담 후기', href: '/reviews' },
+  { name: '상담 조회', href: '/inquiry' }
 ];
 
 export const Navigation: React.FC = () => {
   return (
-    <nav className="hidden md:flex items-center space-x-1">
-      {navigationItems.map((item) => (
+    <nav className="hidden md:flex space-x-8">
+      {navigation.map((item) => (
         <Link
-          key={item.to}
-          to={item.to}
-          className="relative px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 group"
+          key={item.name}
+          href={item.href}
+          className="text-gray-600 hover:text-blue-600 transition-colors"
         >
-          {item.label}
-          <span className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-blue-600 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+          {item.name}
         </Link>
       ))}
-      <Button href="/login" variant="primary" size="md" className="ml-4">
-        로그인
-      </Button>
     </nav>
   );
 }; 

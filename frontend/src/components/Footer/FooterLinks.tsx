@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const quickLinks = [
   { to: '/consultation', label: '상담 신청' },
@@ -15,7 +15,7 @@ export const FooterLinks: React.FC = () => {
         {quickLinks.map((item) => (
           <Link
             key={item.to}
-            to={item.to}
+            href={item.to}
             className="block text-sm text-gray-600 hover:text-blue-600 transition-colors"
           >
             {item.label}

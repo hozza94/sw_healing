@@ -1,12 +1,12 @@
+# Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Install dependencies first (for better caching)
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
+RUN npm install && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -14,5 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Start development server
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 
+# Start development server with optimized settings
+CMD ["npm", "run", "dev"] 
