@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # 환경변수에서 데이터베이스 URL 가져오기
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://healing_user:your_password@localhost:5432/suwon_healing")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./suwon_healing.db")
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(DATABASE_URL)

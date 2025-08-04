@@ -25,6 +25,14 @@ from app.models.checklist import (
 # 리뷰 관련 모델
 from app.models.review import Review, ReviewLike
 
+# 공지사항 관련 모델
+from app.models.notice import Notice
+
+# 게시판 관련 모델
+from app.models.board import Board
+from app.models.comment import Comment
+from app.models.like import Like
+
 # 모든 모델을 한 곳에서 import할 수 있도록 설정
 __all__ = [
     "Base",
@@ -42,5 +50,9 @@ __all__ = [
     "ChecklistItem",
     "UserChecklistResponse",
     "Review",
-    "ReviewLike"
+    "ReviewLike",
+    "Notice",
+    "Board",
+    "Comment",
+    "Like"
 ] 

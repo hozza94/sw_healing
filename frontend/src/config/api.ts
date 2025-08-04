@@ -1,5 +1,5 @@
 // API 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
 export const API_CONFIG = {
   baseURL: API_BASE_URL,
@@ -46,6 +46,26 @@ export const API_ENDPOINTS = {
   HEALING: {
     LIST: '/api/v1/healing',
     DETAIL: (id: string) => `/api/v1/healing/${id}`,
+  },
+  
+  // 공지사항
+  NOTICE: {
+    CREATE: '/api/v1/notices',
+    LIST: '/api/v1/notices',
+    DETAIL: (id: string) => `/api/v1/notices/${id}`,
+    UPDATE: (id: string) => `/api/v1/notices/${id}`,
+    DELETE: (id: string) => `/api/v1/notices/${id}`,
+  },
+  
+  // 게시판
+  BOARD: {
+    CREATE: '/api/v1/boards',
+    LIST: '/api/v1/boards',
+    DETAIL: (id: string) => `/api/v1/boards/${id}`,
+    UPDATE: (id: string) => `/api/v1/boards/${id}`,
+    DELETE: (id: string) => `/api/v1/boards/${id}`,
+    COMMENTS: (id: string) => `/api/v1/boards/${id}/comments`,
+    LIKE: (id: string) => `/api/v1/boards/${id}/like`,
   },
 };
 

@@ -69,6 +69,28 @@ from app.schemas.review import (
     ReviewFilter
 )
 
+# 공지사항 스키마
+from app.schemas.notice import (
+    NoticeCreate,
+    NoticeUpdate,
+    NoticeResponse
+)
+
+# 게시판 스키마
+from app.schemas.board import (
+    BoardCreate,
+    BoardUpdate,
+    BoardResponse,
+    BoardListResponse
+)
+
+# 댓글 스키마
+from app.schemas.comment import (
+    CommentCreate,
+    CommentUpdate,
+    CommentResponse
+)
+
 # 모든 스키마를 한 곳에서 import할 수 있도록 설정
 __all__ = [
     "BaseSchema",
@@ -120,5 +142,15 @@ __all__ = [
     "ReviewLikeResponse",
     "ReviewListResponse",
     "ReviewStats",
-    "ReviewFilter"
+    "ReviewFilter",
+    "NoticeCreate",
+    "NoticeUpdate",
+    "NoticeResponse",
+    "BoardCreate",
+    "BoardUpdate",
+    "BoardResponse",
+    "BoardListResponse",
+    "CommentCreate",
+    "CommentUpdate",
+    "CommentResponse"
 ] 

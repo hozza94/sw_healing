@@ -222,11 +222,11 @@ export const About: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       {/* 헤더 섹션 */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="page-header">
+        <h1 className="page-title">
           수원 힐링 상담센터
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="page-subtitle">
           마음의 치유를 위한 따뜻한 공간
         </p>
       </div>

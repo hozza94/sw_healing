@@ -1,6 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
+import { createConsultation, ConsultationRequest } from '../services/consultationService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, Clock, User, Phone, Mail, MessageSquare, Info } from 'lucide-react';
 
 export const Consultation: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +24,10 @@ export const Consultation: React.FC = () => {
     additionalInfo: ''
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -23,259 +35,342 @@ export const Consultation: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: API 호출 로직 추가
-    console.log('상담 신청:', formData);
-    alert('상담 신청이 완료되었습니다. 빠른 시일 내에 연락드리겠습니다.');
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    
+    try {
+      const consultationData: ConsultationRequest = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        age: formData.age ? parseInt(formData.age) : undefined,
+        gender: formData.gender || undefined,
+        main_concern: formData.mainConcern,
+        preferred_date: formData.preferredDate || undefined,
+        preferred_time: formData.preferredTime || undefined,
+        additional_info: formData.additionalInfo || undefined,
+      };
+
+      const response = await createConsultation(consultationData);
+      
+      console.log('상담 신청 성공:', response);
+      setSubmitStatus('success');
+      
+      // 폼 초기화
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        age: '',
+        gender: '',
+        mainConcern: '',
+        preferredDate: '',
+        preferredTime: '',
+        additionalInfo: ''
+      });
+      
+    } catch (error) {
+      console.error('상담 신청 오류:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* 헤더 */}
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold text-gray-900 mb-4">상담 신청</h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+      <div className="page-header">
+        <h1 className="page-title">상담 신청</h1>
+        <p className="page-subtitle">
           전문 상담사와 함께 당신의 마음 치유 여정을 시작하세요
         </p>
+        <div className="flex justify-center gap-2 mt-4">
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            <User className="w-3 h-3 mr-1" />
+            전문 상담사
+          </Badge>
+          <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Clock className="w-3 h-3 mr-1" />
+            맞춤형 상담
+          </Badge>
+          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+            <MessageSquare className="w-3 h-3 mr-1" />
+            비밀보장
+          </Badge>
+        </div>
       </div>
+
+      {/* 상태 알림 */}
+      {submitStatus === 'success' && (
+        <Alert className="mb-6 border-green-200 bg-green-50">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            상담 신청이 완료되었습니다. 빠른 시일 내에 연락드리겠습니다.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {submitStatus === 'error' && (
+        <Alert className="mb-6 border-red-200 bg-red-50">
+          <Info className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            상담 신청에 실패했습니다. 다시 시도해주세요.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* 메인 폼 */}
         <div className="lg:col-span-2">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-gray-200/50 shadow-xl">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* 기본 정보 섹션 */}
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+          <Card className="shadow-lg border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
+                상담 신청서
+              </CardTitle>
+              <CardDescription>
+                아래 정보를 정확히 입력해 주시면 빠른 시일 내에 연락드리겠습니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* 기본 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    기본 정보
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">이름 *</label>
+                      <Input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="이름을 입력하세요"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">연락처 *</label>
+                      <Input
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="010-0000-0000"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">이메일</label>
+                      <Input
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="example@email.com"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">나이</label>
+                      <Input
+                        name="age"
+                        type="number"
+                        value={formData.age}
+                        onChange={handleChange}
+                        placeholder="나이"
+                        min="1"
+                        max="120"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">성별</label>
+                      <Select value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="성별을 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">남성</SelectItem>
+                          <SelectItem value="female">여성</SelectItem>
+                          <SelectItem value="other">기타</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">기본 정보</h2>
                 </div>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      이름 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                      placeholder="홍길동"
-                    />
-                  </div>
+
+                {/* 상담 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-green-600" />
+                    상담 정보
+                  </h3>
                   
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      이메일 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
+                    <label className="text-sm font-medium text-gray-700">주요 고민사항 *</label>
+                    <Textarea
+                      name="mainConcern"
+                      value={formData.mainConcern}
                       onChange={handleChange}
+                      placeholder="상담하고 싶은 내용을 자유롭게 작성해 주세요"
+                      className="min-h-[120px]"
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                      placeholder="example@email.com"
                     />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      전화번호 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                      placeholder="010-1234-5678"
-                    />
+                {/* 희망 일정 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    희망 일정
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">희망 날짜</label>
+                      <Input
+                        name="preferredDate"
+                        type="date"
+                        value={formData.preferredDate}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">희망 시간</label>
+                      <Select value={formData.preferredTime} onValueChange={(value) => handleSelectChange('preferredTime', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="시간을 선택하세요" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="09:00">오전 9시</SelectItem>
+                          <SelectItem value="10:00">오전 10시</SelectItem>
+                          <SelectItem value="11:00">오전 11시</SelectItem>
+                          <SelectItem value="13:00">오후 1시</SelectItem>
+                          <SelectItem value="14:00">오후 2시</SelectItem>
+                          <SelectItem value="15:00">오후 3시</SelectItem>
+                          <SelectItem value="16:00">오후 4시</SelectItem>
+                          <SelectItem value="17:00">오후 5시</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
+                </div>
+
+                {/* 추가 정보 섹션 */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-orange-600" />
+                    추가 정보
+                  </h3>
                   
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">나이</label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={formData.age}
+                    <label className="text-sm font-medium text-gray-700">추가 요청사항</label>
+                    <Textarea
+                      name="additionalInfo"
+                      value={formData.additionalInfo}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                      placeholder="25"
+                      placeholder="추가로 전달하고 싶은 내용이 있으시면 작성해 주세요"
+                      className="min-h-[100px]"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">성별</label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                {/* 제출 버튼 */}
+                <div className="pt-4">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3"
+                    size="lg"
                   >
-                    <option value="">선택해주세요</option>
-                    <option value="male">남성</option>
-                    <option value="female">여성</option>
-                    <option value="other">기타</option>
-                  </select>
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        신청 중...
+                      </>
+                    ) : (
+                      '상담 신청하기'
+                    )}
+                  </Button>
                 </div>
-              </div>
-
-              {/* 상담 관련 정보 섹션 */}
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">상담 정보</h2>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    주요 고민사항 <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="mainConcern"
-                    value={formData.mainConcern}
-                    onChange={handleChange}
-                    required
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm resize-none"
-                    placeholder="상담하고 싶은 주요 고민사항을 자세히 적어주세요."
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">희망 상담일</label>
-                    <input
-                      type="date"
-                      name="preferredDate"
-                      value={formData.preferredDate}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">희망 시간대</label>
-                    <select
-                      name="preferredTime"
-                      value={formData.preferredTime}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    >
-                      <option value="">선택해주세요</option>
-                      <option value="morning">오전 (09:00-12:00)</option>
-                      <option value="afternoon">오후 (13:00-17:00)</option>
-                      <option value="evening">저녁 (18:00-21:00)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">추가 정보</label>
-                  <textarea
-                    name="additionalInfo"
-                    value={formData.additionalInfo}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm resize-none"
-                    placeholder="상담사가 알아두면 좋을 추가 정보가 있다면 적어주세요."
-                  />
-                </div>
-              </div>
-
-              {/* 제출 버튼 */}
-              <div className="pt-6">
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 px-8 rounded-2xl font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-                >
-                  상담 신청하기
-                </button>
-              </div>
-            </form>
-          </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 사이드바 */}
         <div className="space-y-6">
-          {/* 안내사항 */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-200/50">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">상담 신청 안내사항</h3>
-            </div>
-            <ul className="space-y-3 text-sm text-gray-700">
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>상담 신청 후 24시간 내에 연락드립니다.</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>개인정보는 상담 목적으로만 사용됩니다.</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>상담은 온라인 또는 대면으로 진행 가능합니다.</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>첫 상담은 무료로 진행됩니다.</span>
-              </li>
-            </ul>
-          </div>
-
           {/* 연락처 정보 */}
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">연락처</h3>
-            <div className="space-y-3 text-sm text-gray-600">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
+          <Card className="shadow-lg border-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="w-5 h-5 text-blue-600" />
+                연락처 정보
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="font-medium text-gray-900">전화번호</p>
+                  <p className="text-sm text-gray-600">031-123-4567</p>
                 </div>
-                <span>031-123-4567</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="font-medium text-gray-900">이메일</p>
+                  <p className="text-sm text-gray-600">info@suwon-healing.com</p>
                 </div>
-                <span>info@suwon-healing.com</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="font-medium text-gray-900">운영시간</p>
+                  <p className="text-sm text-gray-600">평일 09:00 - 18:00</p>
                 </div>
-                <span>수원시 영통구 영통동</span>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* 상담 안내 */}
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardTitle className="text-blue-900">상담 안내</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <p className="text-sm text-blue-800">전문 상담사가 1:1 맞춤 상담을 제공합니다</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <p className="text-sm text-blue-800">모든 상담 내용은 철저히 비밀보장됩니다</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                <p className="text-sm text-blue-800">신청 후 24시간 내에 연락드립니다</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

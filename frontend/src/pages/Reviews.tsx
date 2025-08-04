@@ -103,9 +103,9 @@ export const Reviews: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-4">상담 후기</h1>
-        <p className="text-gray-600">
+      <div className="page-header">
+        <h1 className="page-title">상담 후기</h1>
+        <p className="page-subtitle">
           수원 힐링 상담센터를 이용하신 고객님들의 생생한 후기를 확인해보세요
         </p>
       </div>
