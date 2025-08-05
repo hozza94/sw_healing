@@ -42,6 +42,8 @@ jobs:
       - name: Run backend tests
         run: |
           cd backend
+          export DATABASE_URL="${DATABASE_URL:-sqlite:///./suwon_healing.db}"
+          export SECRET_KEY="${SECRET_KEY:-test-secret-key-for-ci}"
           python -m pytest
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -51,7 +53,7 @@ jobs:
           API_V1_STR: /api/v1
           PROJECT_NAME: Suwon Healing Counseling Center
           BACKEND_CORS_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
-          ENVIRONMENT: production
+          ENVIRONMENT: test
           DEBUG: False
 
   deploy-frontend:
