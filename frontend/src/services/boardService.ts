@@ -9,6 +9,8 @@ export interface Board {
   user_id?: number;
   view_count: number;
   like_count: number;
+  comment_count?: number;
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -157,7 +159,7 @@ export const createComment = async (data: CommentCreate): Promise<Comment> => {
 // 좋아요 관련 함수들
 export const likeBoard = async (boardId: number): Promise<void> => {
   try {
-    const response = await apiPost(`${API_ENDPOINTS.BOARD.LIKE}/${boardId}`);
+    const response = await apiPost(`${API_ENDPOINTS.BOARD.LIKE}/${boardId}`, {});
 
     if (!response.ok) {
       const errorData = await response.json();

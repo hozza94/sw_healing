@@ -1,18 +1,17 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
-import { getBoards, type Board as BoardType } from '../services/boardService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Clock, MessageSquare, Heart, User, AlertCircle, Loader2, Plus } from 'lucide-react';
+import { User, Calendar, Clock, MessageSquare, Heart, Search, Plus } from 'lucide-react';
+import { getBoards, type Board as BoardType } from '@/services/boardService';
 
 export const Board: React.FC = () => {
   const [boards, setBoards] = useState<BoardType[]>([]);
+  const [filteredBoards, setFilteredBoards] = useState<BoardType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
@@ -20,9 +19,9 @@ export const Board: React.FC = () => {
       try {
         const data = await getBoards();
         setBoards(data);
-      } catch (err) {
-        setError('게시글을 불러오는데 실패했습니다.');
-        console.error('게시글 로딩 오류:', err);
+        setFilteredBoards(data);
+      } catch (error) {
+        console.error('게시글 목록 조회 실패:', error);
       } finally {
         setLoading(false);
       }
@@ -30,6 +29,26 @@ export const Board: React.FC = () => {
 
     fetchBoards();
   }, []);
+
+  useEffect(() => {
+    let filtered = boards;
+
+    // 카테고리 필터링
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(board => board.category === selectedCategory);
+    }
+
+    // 검색어 필터링
+    if (searchTerm) {
+      filtered = filtered.filter(board =>
+        board.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        board.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        board.author_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredBoards(filtered);
+  }, [boards, searchTerm, selectedCategory]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -48,61 +67,48 @@ export const Board: React.FC = () => {
     { value: '일반', label: '일반' }
   ];
 
-  const filteredBoards = selectedCategory === 'all' 
-    ? boards 
-    : boards.filter(board => board.category === selectedCategory);
-
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-4" />
-          <p className="text-gray-600">게시글을 불러오는 중...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">게시글을 불러오는 중...</div>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-6xl mx-auto">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">{error}</AlertDescription>
-        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
       {/* 헤더 */}
-      <div className="page-header">
-        <h1 className="page-title">게시판</h1>
-        <p className="page-subtitle">
-          상담 후기와 다양한 정보를 공유하는 공간입니다
-        </p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">커뮤니티</h1>
+        <p className="text-gray-600">다른 분들과 경험을 공유하고 소통해보세요</p>
       </div>
 
-      {/* 필터 및 글쓰기 버튼 */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-700">카테고리:</span>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* 검색 및 필터 */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="제목, 내용, 작성자로 검색..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        
-        <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="카테고리 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button asChild className="w-full sm:w-auto">
           <a href="/board/write">
             <Plus className="w-4 h-4 mr-2" />
             글쓰기
@@ -111,35 +117,15 @@ export const Board: React.FC = () => {
       </div>
 
       {/* 게시글 목록 */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {filteredBoards.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
-              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {selectedCategory === 'all' ? '등록된 게시글이 없습니다' : '해당 카테고리의 게시글이 없습니다'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {selectedCategory === 'all' 
-                  ? '첫 번째 게시글을 작성해보세요!' 
-                  : '다른 카테고리를 선택하거나 새로운 글을 작성해보세요.'
-                }
-              </p>
-              {selectedCategory !== 'all' && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedCategory('all')}
-                  className="mr-2"
-                >
-                  전체 보기
-                </Button>
-              )}
-              <Button asChild>
-                <a href="/board/write">
-                  <Plus className="w-4 h-4 mr-2" />
-                  글쓰기
-                </a>
-              </Button>
+              <div className="text-gray-500">
+                {searchTerm || selectedCategory !== 'all' 
+                  ? '검색 결과가 없습니다.' 
+                  : '아직 게시글이 없습니다.'}
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -240,4 +226,6 @@ export const Board: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};
+
+export default Board; 
