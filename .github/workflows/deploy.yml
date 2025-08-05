@@ -75,6 +75,13 @@ jobs:
           cd frontend
           npm ci
           
+      - name: Clean and verify
+        run: |
+          cd frontend
+          rm -rf .next
+          rm -rf node_modules/.cache
+          ls -la src/lib/
+          
       - name: Build
         run: |
           cd frontend
@@ -87,27 +94,28 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist
+          publish_dir: ./frontend/out
           cname: ${{ secrets.CUSTOM_DOMAIN }}
 
-  deploy-backend:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-        
-      - name: Deploy to Railway
-        run: |
-          cd backend
-          railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }} 
+  # deploy-backend:
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && secrets.RAILWAY_TOKEN != ''
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18'
+  #         
+  #     - name: Install Railway CLI
+  #       run: npm install -g @railway/cli
+  #       
+  #     - name: Deploy to Railway
+  #       run: |
+  #         cd backend
+  #         echo ${{ secrets.RAILWAY_TOKEN }} | railway login
+  #         railway up
+  #       env:
+  #         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }} 
