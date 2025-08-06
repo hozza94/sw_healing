@@ -1,192 +1,139 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 
-// 임시 후기 데이터
-const reviews = [
-  {
-    id: 1,
-    counselorName: "김상담",
-    rating: 5,
-    title: "정말 따뜻하고 전문적인 상담이었습니다",
-    content: "처음에는 많이 긴장했는데, 상담사님이 정말 따뜻하게 맞아주셔서 편안하게 상담받을 수 있었습니다. 제 고민을 정말 깊이 들어주시고, 구체적인 해결책도 제시해주셔서 정말 도움이 많이 되었어요.",
-    author: "김**",
-    date: "2024-01-15",
-    isAnonymous: false
-  },
-  {
-    id: 2,
-    counselorName: "이치유",
-    rating: 4,
-    title: "가족 관계가 많이 개선되었어요",
-    content: "가족 간의 소통 문제로 상담을 받았는데, 상담사님이 각자의 입장을 이해하고 중재해주셔서 정말 도움이 되었습니다. 이제 가족들과 더 잘 소통할 수 있게 되었어요.",
-    author: "이**",
-    date: "2024-01-10",
-    isAnonymous: true
-  },
-  {
-    id: 3,
-    counselorName: "박희망",
-    rating: 5,
-    title: "트라우마에서 벗어날 수 있었습니다",
-    content: "오랫동안 트라우마로 힘들어했는데, 상담사님이 안전한 환경에서 차근차근 치유할 수 있도록 도와주셨습니다. 이제 더 이상 과거에 얽매이지 않고 앞으로 나아갈 수 있어요.",
-    author: "박**",
-    date: "2024-01-08",
-    isAnonymous: false
-  },
-  {
-    id: 4,
-    counselorName: "최따뜻",
-    rating: 4,
-    title: "부부 관계가 회복되었습니다",
-    content: "부부 간의 갈등이 심했는데, 상담사님이 각자의 감정을 이해하고 소통 방법을 가르쳐주셔서 정말 도움이 되었습니다. 이제 서로를 더 이해하고 사랑할 수 있어요.",
-    author: "최**",
-    date: "2024-01-05",
-    isAnonymous: true
-  },
-  {
-    id: 5,
-    counselorName: "김상담",
-    rating: 5,
-    title: "자신감을 찾을 수 있었어요",
-    content: "자신감이 없어서 상담을 받았는데, 상담사님이 제 안에 있는 장점들을 발견할 수 있도록 도와주셨습니다. 이제 더 자신감 있게 살 수 있어요.",
-    author: "정**",
-    date: "2024-01-03",
-    isAnonymous: false
-  },
-  {
-    id: 6,
-    counselorName: "이치유",
-    rating: 4,
-    title: "청소년 자녀와의 관계가 개선되었습니다",
-    content: "청소년 자녀와 소통이 안 되어서 상담을 받았는데, 상담사님이 자녀의 입장을 이해하고 소통 방법을 가르쳐주셔서 정말 도움이 되었습니다.",
-    author: "한**",
-    date: "2024-01-01",
-    isAnonymous: true
-  }
-]
-
 export default function ReviewsPage() {
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-300"}>
-        ⭐
-      </span>
-    ))
+  const reviews = [
+    {
+      id: 1,
+      title: "마음이 가벼워졌어요",
+      content: "오랫동안 혼자 끌어안고 있던 고민들을 상담사님과 나누면서 마음이 정말 가벼워졌습니다. 전문적이고 따뜻한 상담에 감사드려요.",
+      author: "김**",
+      rating: 5,
+      date: "2024-01-15",
+      counselor: "김민수 상담사",
+      category: "개인 상담"
+    },
+    {
+      id: 2,
+      title: "부부 관계가 많이 개선되었습니다",
+      content: "부부 간 소통 문제로 힘들어했는데, 상담을 통해 서로를 더 잘 이해하게 되었어요. 이제는 건강한 관계를 만들어가고 있습니다.",
+      author: "이**",
+      rating: 5,
+      date: "2024-01-10",
+      counselor: "최수진 상담사",
+      category: "부부 상담"
+    },
+    {
+      id: 3,
+      title: "청소년 상담이 정말 도움이 되었어요",
+      content: "아이가 학교생활에서 겪는 어려움을 상담사님과 함께 해결해나가면서 많이 성장했습니다. 전문적인 도움에 감사합니다.",
+      author: "박**",
+      rating: 4,
+      date: "2024-01-08",
+      counselor: "이영희 상담사",
+      category: "청소년 상담"
+    },
+    {
+      id: 4,
+      title: "트라우마 치유에 큰 도움이 되었습니다",
+      content: "과거의 상처로 힘들어했는데, 상담을 통해 치유의 과정을 거치면서 많이 회복되었어요. 안전한 환경에서 상담받을 수 있어서 좋았습니다.",
+      author: "최**",
+      rating: 5,
+      date: "2024-01-05",
+      counselor: "박준호 상담사",
+      category: "트라우마 상담"
+    },
+    {
+      id: 5,
+      title: "가족 관계가 개선되었어요",
+      content: "가족 구성원 간의 이해와 소통이 부족했는데, 상담을 통해 서로를 더 잘 이해하게 되었습니다. 이제는 건강한 가족 관계를 만들어가고 있어요.",
+      author: "정**",
+      rating: 4,
+      date: "2024-01-03",
+      counselor: "이영희 상담사",
+      category: "가족 상담"
+    },
+    {
+      id: 6,
+      title: "전문적이고 따뜻한 상담이었습니다",
+      content: "상담사님의 전문성과 따뜻함이 정말 인상적이었어요. 내담자의 입장에서 깊이 공감해주시고, 실질적인 도움을 주셔서 감사합니다.",
+      author: "한**",
+      rating: 5,
+      date: "2023-12-28",
+      counselor: "김민수 상담사",
+      category: "개인 상담"
+    }
+  ]
+
+  const getRatingStars = (rating: number) => {
+    return "⭐".repeat(rating) + "☆".repeat(5 - rating)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* 헤더 */}
-      <header className="bg-white/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-full"></div>
-              <Link href="/" className="text-xl font-bold text-gray-900">수원 힐링 상담센터</Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" asChild>
-                <Link href="/auth/login">로그인</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/auth/register">회원가입</Link>
-              </Button>
-            </div>
-          </nav>
-        </div>
-      </header>
-
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* 메인 콘텐츠 */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">상담 후기</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            실제 상담을 받으신 분들의 생생한 후기를 확인해보세요
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-6">상담 후기</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            실제 상담을 받으신 분들의 생생한 후기를 확인해보세요.
+            전문 상담사와 함께한 치유의 여정을 통해 얻은 변화와 성장을 공유합니다.
           </p>
         </div>
 
-        {/* 통계 */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl font-bold text-blue-600 mb-2">4.8</div>
-              <div className="text-gray-600">평균 평점</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl font-bold text-green-600 mb-2">500+</div>
-              <div className="text-gray-600">총 후기 수</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl font-bold text-purple-600 mb-2">98%</div>
-              <div className="text-gray-600">만족도</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="py-6">
-              <div className="text-3xl font-bold text-orange-600 mb-2">10+</div>
-              <div className="text-gray-600">전문 상담사</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 후기 목록 */}
         <div className="grid md:grid-cols-2 gap-8">
           {reviews.map((review) => (
-            <Card key={review.id} className="hover:shadow-lg transition-shadow">
+            <Card key={review.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{review.title}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {review.counselorName} 상담사
-                    </CardDescription>
+                  <div className="flex-1">
+                    <CardTitle className="text-xl text-gray-900 mb-2">{review.title}</CardTitle>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {review.category}
+                      </Badge>
+                      <span className="text-sm text-gray-500">{review.counselor}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    {renderStars(review.rating)}
+                  <div className="text-right">
+                    <div className="text-yellow-500 text-sm mb-1">
+                      {getRatingStars(review.rating)}
+                    </div>
+                    <div className="text-xs text-gray-500">{review.date}</div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 mb-4">{review.content}</p>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>{review.isAnonymous ? "익명" : review.author}</span>
-                  <span>{review.date}</span>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  {review.content}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">- {review.author}</span>
+                  <Link href={`/reviews/${review.id}`} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    자세히 보기 →
+                  </Link>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* 페이지네이션 */}
-        <div className="flex justify-center mt-12">
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">이전</Button>
-            <Button size="sm">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
-            <Button variant="outline" size="sm">다음</Button>
-          </div>
-        </div>
-
         {/* CTA 섹션 */}
-        <div className="mt-16 text-center">
-          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        <div className="text-center mt-16">
+          <Card className="bg-blue-600 text-white border-0 shadow-xl max-w-2xl mx-auto">
             <CardContent className="py-12">
-              <h2 className="text-2xl font-bold mb-4">상담을 시작해보세요</h2>
-              <p className="text-blue-100 mb-6">
-                실제 후기를 보셨다면, 이제 당신의 차례입니다. 
-                전문 상담사와 함께 치유의 여정을 시작해보세요.
+              <h2 className="text-3xl font-bold mb-4">상담을 시작해보세요</h2>
+              <p className="text-blue-100 mb-6 text-lg leading-relaxed">
+                후기를 보셨다면, 이제 여러분도 전문 상담사와 함께 
+                치유의 여정을 시작해보세요.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="secondary" size="lg" asChild>
+                <Button variant="secondary" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4">
                   <Link href="/consultation">상담 신청하기</Link>
                 </Button>
-                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600" asChild>
+                <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-blue-600 text-lg px-8 py-4" asChild>
                   <Link href="/counselors">상담사 소개</Link>
                 </Button>
               </div>

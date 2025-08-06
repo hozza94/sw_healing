@@ -6,7 +6,7 @@
 
 ### Backend
 - **Framework**: FastAPI (Python)
-- **Database**: PostgreSQL
+- **Database**: SQLite (개발) / PostgreSQL (프로덕션)
 - **ORM**: SQLAlchemy
 - **Authentication**: JWT
 - **Validation**: Pydantic
@@ -32,7 +32,7 @@ suwon_healing/
 ### 필수 요구사항
 - Node.js 18+
 - Python 3.11+
-- PostgreSQL 15+
+- SQLite (개발용)
 - Docker & Docker Compose
 
 ### 1. 저장소 클론
@@ -55,9 +55,6 @@ pip install -r requirements.txt
 # 환경변수 설정
 cp .env.example .env
 # .env 파일을 편집하여 데이터베이스 설정
-
-# 데이터베이스 마이그레이션
-alembic upgrade head
 
 # 서버 실행
 uvicorn app.main:app --reload
@@ -82,6 +79,38 @@ docker-compose up -d
 # 로그 확인
 docker-compose logs -f
 ```
+
+## 📊 데이터베이스 접근
+
+### 현재 상태
+- **데이터베이스**: SQLite (로컬 개발용)
+- **파일 위치**: `backend/suwon_healing.db`
+- **테이블**: 5개 (users, counselors, consultations, notices, reviews)
+
+### 데이터베이스 확인 방법
+
+#### 1. 명령어로 확인 (추천)
+```bash
+cd backend
+python check_db.py
+```
+
+#### 2. GUI 웹 인터페이스
+```bash
+cd backend
+python db_gui.py
+# 브라우저에서 http://localhost:5000 접속
+```
+
+#### 3. SQLite CLI
+```bash
+sqlite3 backend/suwon_healing.db
+.tables                    # 테이블 목록
+SELECT * FROM users;       # 데이터 조회
+.quit                      # 종료
+```
+
+**자세한 내용**: [데이터베이스 접근 가이드](docs/database-access.md)
 
 ## 📚 주요 기능
 
@@ -158,6 +187,7 @@ npm test
 
 - [요구사항 정의서](docs/requirements.md)
 - [프로젝트 구조](docs/project-structure.md)
+- [데이터베이스 접근 가이드](docs/database-access.md)
 - [API 문서](docs/api-documentation.md)
 - [배포 가이드](docs/deployment-guide.md)
 

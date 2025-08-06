@@ -10,8 +10,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
     
-    # 데이터베이스 설정
-    DATABASE_URL: str = "sqlite:///./suwon_healing.db"
+    # 데이터베이스 설정 (Turso + Fallback)
+    DATABASE_URL: str = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
+    DATABASE_AUTH_TOKEN: str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NTE5YTM5Zi1kZTc5LTQxNGYtOTA0ZC1kOGI2NDliMDZmN2MiLCJpYXQiOjE3NTQ0NDMzOTksInJpZCI6IjA5OGQzZTNhLWE0OWMtNGQ0NC04MGIxLWVjOTM3MzY4YjQ5MSJ9.FZgSEU3NZJj7lhaLHfnNg6KxoLUGO9u9MLsa9nLI3HBCKVf6Ke1O4-m0WMs_CQdtcLEAYL3xNIID8E8HnRqzAA"
+    DATABASE_FALLBACK_URL: str = "sqlite:///./suwon_healing.db"
     DATABASE_TEST_URL: str = "sqlite:///./suwon_healing_test.db"
     
     # Redis 설정
