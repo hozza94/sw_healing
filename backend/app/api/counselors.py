@@ -42,23 +42,30 @@ def get_counselors(
     db: Session = Depends(get_db)
 ):
     """상담사 목록 조회"""
-    query = db.query(Counselor)
-    
-    if is_online is not None:
-        query = query.filter(Counselor.is_online == is_online)
-    
-    if is_active is not None:
-        query = query.filter(Counselor.is_active == is_active)
-    
-    total = query.count()
-    counselors = query.offset(skip).limit(limit).all()
-    
-    return CounselorList(
-        counselors=counselors,
-        total=total,
-        page=skip // limit + 1,
-        size=limit
-    )
+    try:
+        query = db.query(Counselor)
+        
+        if is_online is not None:
+            query = query.filter(Counselor.is_online == is_online)
+        
+        if is_active is not None:
+            query = query.filter(Counselor.is_active == is_active)
+        
+        total = query.count()
+        counselors = query.offset(skip).limit(limit).all()
+        
+        return CounselorList(
+            counselors=counselors,
+            total=total,
+            page=skip // limit + 1,
+            size=limit
+        )
+    except Exception as e:
+        print(f"상담사 목록 조회 오류: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"상담사 목록을 가져오는데 실패했습니다: {str(e)}"
+        )
 
 
 @router.get("/online", response_model=CounselorList)

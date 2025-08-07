@@ -25,6 +25,8 @@ class ApiClient {
     
     const defaultHeaders = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Cache-Control': 'no-cache',
     };
 
     const config: RequestInit = {
@@ -33,10 +35,17 @@ class ApiClient {
         ...defaultHeaders,
         ...options.headers,
       },
+      redirect: 'follow', // 리다이렉트 자동 처리
     };
 
     try {
       const response = await fetch(url, config);
+      
+      // 리다이렉트 처리
+      if (response.redirected) {
+        console.log('리다이렉트 발생:', response.url);
+      }
+      
       const data = await response.json();
 
       if (!response.ok) {
