@@ -21,8 +21,8 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    // trailing slash 제거
-    const cleanEndpoint = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+    // trailing slash 추가 (API 엔드포인트에 맞춤)
+    const cleanEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
     const url = `${this.baseURL}${cleanEndpoint}`;
     
     const defaultHeaders = {
@@ -37,7 +37,7 @@ class ApiClient {
         ...defaultHeaders,
         ...options.headers,
       },
-      redirect: 'error', // 리다이렉트 방지
+      redirect: 'follow', // 리다이렉트 허용
     };
 
     try {

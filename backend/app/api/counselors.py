@@ -33,7 +33,7 @@ def create_counselor(
     return db_counselor
 
 
-@router.get("", response_model=CounselorList)
+@router.get("/", response_model=CounselorList)
 def get_counselors(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),

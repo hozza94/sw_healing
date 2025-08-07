@@ -24,17 +24,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 리다이렉트 방지 미들웨어
+# HTTPS 강제 적용 미들웨어
 @app.middleware("http")
-async def prevent_redirects(request: Request, call_next):
-    """리다이렉트 방지 미들웨어"""
-    response = await call_next(request)
-    
-    # HTTPS 강제 적용
-    if request.url.scheme == "http" and settings.ENVIRONMENT == "production":
+async def force_https(request: Request, call_next):
+    """HTTPS 강제 적용 미들웨어"""
+    # 프로덕션 환경에서만 HTTPS 강제 적용
+    if settings.ENVIRONMENT == "production" and request.url.scheme == "http":
         https_url = str(request.url).replace("http://", "https://")
         return RedirectResponse(url=https_url, status_code=301)
     
+    response = await call_next(request)
     return response
 
 # 라우터 등록
