@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { getCounselors, Counselor } from "@/lib/counselors"
+import { getApprovedCounselors, Counselor } from "@/lib/counselors"
 import { useEffect, useState } from "react"
 
 export default function CounselorsPage() {
@@ -15,7 +15,7 @@ export default function CounselorsPage() {
   useEffect(() => {
     async function loadCounselors() {
       try {
-        const data = await getCounselors();
+        const data = await getApprovedCounselors();
         setCounselors(data);
       } catch (err) {
         console.error('상담사 데이터 로딩 실패:', err);

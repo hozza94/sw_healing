@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getCounselors, Counselor } from '@/lib/counselors';
+import { getApprovedCounselors, Counselor } from '@/lib/counselors';
 
 interface CounselorSelectorProps {
   onSelect: (counselor: Counselor) => void;
@@ -21,7 +21,7 @@ export default function CounselorSelector({ onSelect, selectedCounselorId, onNex
   useEffect(() => {
     async function loadCounselors() {
       try {
-        const data = await getCounselors();
+        const data = await getApprovedCounselors();
         setCounselors(data);
         
         // 이미 선택된 상담사가 있다면 설정
