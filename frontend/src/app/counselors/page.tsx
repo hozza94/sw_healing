@@ -2,58 +2,20 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { getCounselors, Counselor } from "@/lib/counselors"
 
-export default function CounselorsPage() {
-  const counselors = [
-    {
-      id: 1,
-      name: "김민수",
-      title: "수석 상담사",
-      specialty: "개인 상담, 부부 상담",
-      experience: "15년",
-      rating: 4.9,
-      reviewCount: 127,
-      isOnline: true,
-      image: "👨‍⚕️",
-      description: "개인과 부부의 심리적 어려움을 전문적으로 상담하며, 내담자의 변화와 성장을 돕습니다."
-    },
-    {
-      id: 2,
-      name: "이영희",
-      title: "전문 상담사",
-      specialty: "청소년 상담, 가족 상담",
-      experience: "12년",
-      rating: 4.8,
-      reviewCount: 98,
-      isOnline: true,
-      image: "👩‍⚕️",
-      description: "청소년의 성장 과정에서 겪는 어려움과 가족 관계 개선에 특화되어 있습니다."
-    },
-    {
-      id: 3,
-      name: "박준호",
-      title: "전문 상담사",
-      specialty: "트라우마 상담, 개인 상담",
-      experience: "10년",
-      rating: 4.7,
-      reviewCount: 85,
-      isOnline: false,
-      image: "👨‍⚕️",
-      description: "과거의 상처와 트라우마 치유에 전문성을 가지고 있으며, 안전한 환경에서 상담을 제공합니다."
-    },
-    {
-      id: 4,
-      name: "최수진",
-      title: "전문 상담사",
-      specialty: "부부 상담, 이혼 상담",
-      experience: "8년",
-      rating: 4.6,
-      reviewCount: 73,
-      isOnline: true,
-      image: "👩‍⚕️",
-      description: "부부 간의 갈등 해결과 건강한 관계 구축을 돕는 전문 상담사입니다."
-    }
-  ]
+// 서버 컴포넌트로 데이터 가져오기
+async function getCounselorsData(): Promise<Counselor[]> {
+  try {
+    return await getCounselors();
+  } catch (error) {
+    console.error('상담사 데이터를 가져오는데 실패했습니다:', error);
+    return [];
+  }
+}
+
+export default async function CounselorsPage() {
+  const counselors = await getCounselorsData();
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -67,54 +29,81 @@ export default function CounselorsPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {counselors.map((counselor) => (
-            <Card key={counselor.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-4xl">{counselor.image}</div>
+        {counselors.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">😔</div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">상담사 정보를 불러올 수 없습니다</h3>
+            <p className="text-gray-600 mb-8">잠시 후 다시 시도해주세요.</p>
+            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/">홈으로 돌아가기</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-8">
+            {counselors.map((counselor) => (
+              <Card key={counselor.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-4xl">
+                        {counselor.image_url ? (
+                          <img 
+                            src={counselor.image_url} 
+                            alt={counselor.name}
+                            className="w-16 h-16 rounded-full object-cover"
+                          />
+                        ) : (
+                          "👨‍⚕️"
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl text-gray-900">{counselor.name}</CardTitle>
+                        <CardDescription className="text-blue-600 font-medium">
+                          {counselor.specialization} 전문
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                        온라인
+                      </Badge>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-yellow-500">⭐</span>
+                        <span className="font-medium">4.8</span>
+                        <span className="text-gray-500">(15)</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
                     <div>
-                      <CardTitle className="text-2xl text-gray-900">{counselor.name}</CardTitle>
-                      <CardDescription className="text-blue-600 font-medium">{counselor.title}</CardDescription>
+                      <h4 className="font-semibold text-gray-900 mb-2">전문 분야</h4>
+                      <p className="text-gray-600">{counselor.specialization}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">경력</h4>
+                      <p className="text-gray-600">{counselor.experience_years}년</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">학력</h4>
+                      <p className="text-gray-600">{counselor.education}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">소개</h4>
+                      <p className="text-gray-600 leading-relaxed">{counselor.description}</p>
+                    </div>
+                    <div className="pt-4">
+                      <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+                        <Link href={`/consultation?counselor=${counselor.id}`}>상담 예약하기</Link>
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end space-y-2">
-                    <Badge variant={counselor.isOnline ? "default" : "secondary"}>
-                      {counselor.isOnline ? "온라인" : "오프라인"}
-                    </Badge>
-                    <div className="flex items-center space-x-1">
-                      <span className="text-yellow-500">⭐</span>
-                      <span className="font-medium">{counselor.rating}</span>
-                      <span className="text-gray-500">({counselor.reviewCount})</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">전문 분야</h4>
-                    <p className="text-gray-600">{counselor.specialty}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">경력</h4>
-                    <p className="text-gray-600">{counselor.experience}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">소개</h4>
-                    <p className="text-gray-600 leading-relaxed">{counselor.description}</p>
-                  </div>
-                  <div className="pt-4">
-                    <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-                      <Link href={`/counselors/${counselor.id}`}>상담 예약하기</Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* CTA 섹션 */}
         <div className="text-center mt-16">
