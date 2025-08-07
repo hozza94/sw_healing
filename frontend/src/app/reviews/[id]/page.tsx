@@ -156,13 +156,13 @@ export default function ReviewDetailPage() {
                       <span className="text-green-900">{review.counselor_name || '미지정'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-green-800 font-medium">상담 유형:</span>
-                      <span className="text-green-900">{review.consultation_type || '일반'}</span>
+                      <span className="text-green-800 font-medium">상담 ID:</span>
+                      <span className="text-green-900">{review.consultation_id || '미연결'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-green-800 font-medium">상태:</span>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        {review.status === 'approved' ? '승인됨' : review.status}
+                      <span className="text-green-800 font-medium">승인 상태:</span>
+                      <Badge variant="secondary" className={review.is_approved ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
+                        {review.is_approved ? '승인됨' : '대기중'}
                       </Badge>
                     </div>
                   </div>
