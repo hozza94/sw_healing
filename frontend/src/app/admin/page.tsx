@@ -10,6 +10,8 @@ import { getCounselors } from '@/lib/counselors';
 import { getReviews } from '@/lib/reviews';
 import { getNotices } from '@/lib/notices';
 import { getConsultations } from '@/lib/consultations';
+import CounselorForm from '@/components/forms/CounselorForm';
+import { deleteCounselor } from '@/lib/counselors';
 
 interface DashboardStats {
   counselors: number;
@@ -169,6 +171,23 @@ function CounselorsTab() {
     }
   };
 
+  const handleCounselorSuccess = () => {
+    fetchCounselors(); // 목록 새로고침
+  };
+
+  const handleDeleteCounselor = async (counselorId: string) => {
+    if (confirm('정말로 이 상담사를 삭제하시겠습니까?')) {
+      try {
+        await deleteCounselor(counselorId);
+        fetchCounselors(); // 목록 새로고침
+        alert('상담사가 삭제되었습니다.');
+      } catch (error) {
+        console.error('상담사 삭제 실패:', error);
+        alert('상담사 삭제에 실패했습니다.');
+      }
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">상담사 데이터 로딩 중...</div>;
   }
@@ -177,7 +196,7 @@ function CounselorsTab() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">상담사 목록</h2>
-        <Button variant="outline">새 상담사 추가</Button>
+        <CounselorForm onSuccess={handleCounselorSuccess} />
       </div>
       
       <div className="grid gap-4">
@@ -185,18 +204,41 @@ function CounselorsTab() {
           <Card key={counselor.id}>
             <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-lg">{counselor.name}</h3>
                   <p className="text-gray-600">{counselor.specialization}</p>
-                  <p className="text-sm text-gray-500">{counselor.email}</p>
+                  <p className="text-sm text-gray-500">경력: {counselor.experience_years}년</p>
+                  <p className="text-sm text-gray-500">{counselor.education}</p>
+                  {counselor.description && (
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                      {counselor.description}
+                    </p>
+                  )}
                 </div>
-                <div className="text-right">
-                  <Badge variant={counselor.is_online ? "default" : "secondary"}>
-                    {counselor.is_online ? '온라인' : '오프라인'}
-                  </Badge>
-                  <div className="mt-2">
-                    <span className="text-yellow-600 font-semibold">★ {counselor.rating}</span>
-                    <span className="text-gray-500 text-sm ml-1">({counselor.total_reviews}개 후기)</span>
+                <div className="flex flex-col items-end space-y-2 ml-4">
+                  <div className="flex space-x-2">
+                    <CounselorForm 
+                      counselor={counselor} 
+                      onSuccess={handleCounselorSuccess}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          수정
+                        </Button>
+                      }
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDeleteCounselor(counselor.id)}
+                    >
+                      삭제
+                    </Button>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                      활성
+                    </Badge>
                   </div>
                 </div>
               </div>
