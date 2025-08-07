@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from .config import settings
 from .database import create_tables
 from .api import auth, consultations, counselors, reviews, notices
@@ -22,6 +23,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 리다이렉트 방지 미들웨어
+@app.middleware("http")
+async def prevent_redirects(request: Request, call_next):
+    """리다이렉트 방지 미들웨어"""
+    response = await call_next(request)
+    
+    # HTTPS 강제 적용
+    if request.url.scheme == "http" and settings.ENVIRONMENT == "production":
+        https_url = str(request.url).replace("http://", "https://")
+        return RedirectResponse(url=https_url, status_code=301)
+    
+    return response
 
 # 라우터 등록
 app.include_router(auth.router, prefix="/api")
