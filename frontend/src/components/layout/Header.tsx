@@ -30,6 +30,9 @@ export default function Header() {
             <Link href="/notices" className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium">
               공지사항
             </Link>
+            <Link href="/admin" className="text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium">
+              관리자
+            </Link>
           </div>
           <div className="flex items-center space-x-4">
             <Button variant="outline" asChild className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium px-6 py-2">
