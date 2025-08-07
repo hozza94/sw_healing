@@ -58,6 +58,25 @@ function mapNoticeResponse(response: NoticeResponse): Notice {
   };
 }
 
+// 모든 공지사항 목록 가져오기 (관리자용)
+export async function getNotices(): Promise<{notices: Notice[], total: number, page: number, size: number} | null> {
+  try {
+    const response = await apiClient.get<{notices: NoticeResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.NOTICES);
+    if (response.data) {
+      return {
+        notices: response.data.notices.map(mapNoticeResponse),
+        total: response.data.total,
+        page: response.data.page,
+        size: response.data.size
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('공지사항 목록을 가져오는데 실패했습니다:', error);
+    return null;
+  }
+}
+
 // 발행된 공지사항 목록 가져오기
 export async function getPublishedNotices(): Promise<Notice[]> {
   try {

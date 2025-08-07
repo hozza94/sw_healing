@@ -67,6 +67,25 @@ function mapReviewResponse(response: ReviewResponse): Review {
   };
 }
 
+// 모든 후기 목록 가져오기 (관리자용)
+export async function getReviews(): Promise<{reviews: Review[], total: number, page: number, size: number} | null> {
+  try {
+    const response = await apiClient.get<{reviews: ReviewResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.REVIEWS);
+    if (response.data) {
+      return {
+        reviews: response.data.reviews.map(mapReviewResponse),
+        total: response.data.total,
+        page: response.data.page,
+        size: response.data.size
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('후기 목록을 가져오는데 실패했습니다:', error);
+    return null;
+  }
+}
+
 // 승인된 후기 목록 가져오기
 export async function getApprovedReviews(counselorId?: string): Promise<Review[]> {
   try {
