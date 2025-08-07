@@ -122,4 +122,30 @@ async def root():
 @app.get("/health")
 async def health_check():
     """헬스 체크"""
-    return {"status": "healthy"} 
+    return {"status": "healthy"}
+
+
+@app.get("/test-counselors")
+async def test_counselors():
+    """상담사 테스트 엔드포인트"""
+    try:
+        from .database import get_db
+        from .models.counselor import Counselor
+        
+        db = next(get_db())
+        counselors = db.query(Counselor).all()
+        
+        return {
+            "message": "상담사 테스트",
+            "count": len(counselors),
+            "counselors": [
+                {
+                    "id": c.id,
+                    "name": c.name,
+                    "specialization": c.specialization,
+                    "rating": c.rating
+                } for c in counselors
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e)} 
