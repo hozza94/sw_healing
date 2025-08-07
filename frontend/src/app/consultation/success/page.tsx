@@ -67,16 +67,16 @@ export default function ConsultationSuccessPage() {
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-blue-800 font-medium">상담 제목:</span>
-                      <span className="text-blue-900">{consultation.title}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
                       <span className="text-blue-800 font-medium">상담 유형:</span>
                       <span className="text-blue-900">{consultation.consultation_type}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-blue-800 font-medium">신청자:</span>
-                      <span className="text-blue-900">{consultation.contact_name}</span>
+                      <span className="text-blue-800 font-medium">긴급도:</span>
+                      <span className="text-blue-900">{consultation.urgency_level}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-800 font-medium">상담 내용:</span>
+                      <span className="text-blue-900">{consultation.description}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-blue-800 font-medium">상태:</span>
@@ -140,3 +140,4 @@ export default function ConsultationSuccessPage() {
     </div>
   )
 }
+

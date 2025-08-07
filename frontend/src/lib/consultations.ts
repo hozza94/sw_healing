@@ -40,7 +40,7 @@ export interface UpdateConsultationRequest {
 export async function getConsultations(): Promise<ConsultationList | null> {
   try {
     const response = await apiClient.get<ConsultationList>(API_ENDPOINTS.CONSULTATIONS);
-    return response.data;
+    return response.data || null;
   } catch (error) {
     console.error('상담 신청 목록을 가져오는데 실패했습니다:', error);
     return null;
@@ -51,7 +51,7 @@ export async function getConsultations(): Promise<ConsultationList | null> {
 export async function getConsultation(id: string): Promise<Consultation | null> {
   try {
     const response = await apiClient.get<Consultation>(API_ENDPOINTS.CONSULTATION(id));
-    return response.data;
+    return response.data || null;
   } catch (error) {
     console.error('상담 신청 정보를 가져오는데 실패했습니다:', error);
     return null;
@@ -62,7 +62,7 @@ export async function getConsultation(id: string): Promise<Consultation | null> 
 export async function createConsultation(data: CreateConsultationRequest): Promise<Consultation | null> {
   try {
     const response = await apiClient.post<Consultation>(API_ENDPOINTS.CONSULTATIONS, data);
-    return response.data;
+    return response.data || null;
   } catch (error) {
     console.error('상담 신청에 실패했습니다:', error);
     throw error;
@@ -73,7 +73,7 @@ export async function createConsultation(data: CreateConsultationRequest): Promi
 export async function updateConsultation(id: string, data: UpdateConsultationRequest): Promise<Consultation | null> {
   try {
     const response = await apiClient.put<Consultation>(API_ENDPOINTS.CONSULTATION(id), data);
-    return response.data;
+    return response.data || null;
   } catch (error) {
     console.error('상담 신청 수정에 실패했습니다:', error);
     return null;

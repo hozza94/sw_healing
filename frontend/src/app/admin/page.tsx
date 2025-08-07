@@ -44,10 +44,10 @@ export default function AdminDashboard() {
       ]);
 
       setStats({
-        counselors: counselorsRes?.data?.total || 0,
-        consultations: consultationsRes?.data?.total || 0,
-        reviews: reviewsRes?.data?.total || 0,
-        notices: noticesRes?.data?.total || 0
+        counselors: counselorsRes?.total || 0,
+        consultations: consultationsRes?.total || 0,
+        reviews: reviewsRes?.total || 0,
+        notices: noticesRes?.total || 0
       });
     } catch (error) {
       console.error('대시보드 데이터 로딩 실패:', error);
@@ -161,7 +161,7 @@ function CounselorsTab() {
     try {
       setLoading(true);
       const response = await getCounselors();
-      setCounselors(response?.data?.counselors || []);
+      setCounselors(response?.counselors || []);
     } catch (error) {
       console.error('상담사 데이터 로딩 실패:', error);
     } finally {
@@ -221,7 +221,7 @@ function ConsultationsTab() {
     try {
       setLoading(true);
       const response = await getConsultations();
-      setConsultations(response?.data?.consultations || []);
+      setConsultations(response?.consultations || []);
     } catch (error) {
       console.error('상담 신청 데이터 로딩 실패:', error);
     } finally {
@@ -276,7 +276,7 @@ function ReviewsTab() {
     try {
       setLoading(true);
       const response = await getReviews();
-      setReviews(response?.data?.reviews || []);
+      setReviews(response?.reviews || []);
     } catch (error) {
       console.error('후기 데이터 로딩 실패:', error);
     } finally {
@@ -334,7 +334,7 @@ function NoticesTab() {
     try {
       setLoading(true);
       const response = await getNotices();
-      setNotices(response?.data?.notices || []);
+      setNotices(response?.notices || []);
     } catch (error) {
       console.error('공지사항 데이터 로딩 실패:', error);
     } finally {

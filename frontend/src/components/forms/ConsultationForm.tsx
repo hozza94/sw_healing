@@ -9,6 +9,22 @@ import { createConsultation, CreateConsultationRequest } from '@/lib/consultatio
 import { Counselor } from '@/lib/counselors';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CounselorSelector from './CounselorSelector';
+
+interface ConsultationFormData {
+  counselor_id: number;
+  consultation_type: 'INDIVIDUAL' | 'COUPLE' | 'FAMILY' | 'GROUP';
+  urgency_level: 'LOW' | 'MEDIUM' | 'HIGH';
+  description: string;
+  scheduled_at: string;
+  // 추가 폼 필드들
+  title: string;
+  preferred_date: string;
+  preferred_time: string;
+  contact_name: string;
+  contact_phone: string;
+  contact_email: string;
+  is_confidential: boolean;
+}
 import DateSelector from './DateSelector';
 
 interface ConsultationFormProps {
@@ -20,19 +36,20 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
   const searchParams = useSearchParams();
   const selectedCounselorId = counselorId || searchParams.get('counselor');
   
-     const [formData, setFormData] = useState<CreateConsultationRequest>({
-     consultation_type: 'INDIVIDUAL',
-     title: '',
-     description: '',
-     preferred_date: '',
-     preferred_time: '',
-     contact_name: '',
-     contact_phone: '',
-     contact_email: '',
-     urgency_level: 'MEDIUM',
-     is_confidential: true,
-     counselor_id: selectedCounselorId || undefined
-   });
+       const [formData, setFormData] = useState<ConsultationFormData>({
+    counselor_id: selectedCounselorId ? parseInt(selectedCounselorId) : 0,
+    consultation_type: 'INDIVIDUAL',
+    urgency_level: 'MEDIUM',
+    description: '',
+    scheduled_at: '',
+    title: '',
+    preferred_date: '',
+    preferred_time: '',
+    contact_name: '',
+    contact_phone: '',
+    contact_email: '',
+    is_confidential: true
+  });
   
   const [selectedCounselor, setSelectedCounselor] = useState<Counselor | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -42,7 +59,7 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
     setSelectedCounselor(counselor);
     setFormData(prev => ({
       ...prev,
-      counselor_id: counselor.id
+      counselor_id: parseInt(counselor.id)
     }));
   };
 
@@ -60,7 +77,7 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
     }));
   };
 
-  const handleInputChange = (field: keyof CreateConsultationRequest, value: string | boolean) => {
+  const handleInputChange = (field: keyof ConsultationFormData, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -73,7 +90,16 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
     setIsSubmitting(true);
     
     try {
-      const result = await createConsultation(formData);
+      // ConsultationFormData를 CreateConsultationRequest로 변환
+      const consultationData: CreateConsultationRequest = {
+        counselor_id: formData.counselor_id,
+        consultation_type: formData.consultation_type,
+        urgency_level: formData.urgency_level,
+        description: formData.description,
+        scheduled_at: formData.scheduled_at
+      };
+      
+      const result = await createConsultation(consultationData);
       if (result) {
         // 성공 시 상담 신청 번호와 함께 상세 정보 페이지로 이동
         router.push(`/consultation/success?id=${result.id}`);
