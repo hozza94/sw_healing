@@ -121,14 +121,34 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* 데이터 관리 탭 */}
-      <Tabs defaultValue="counselors" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="counselors">상담사 관리</TabsTrigger>
-          <TabsTrigger value="consultations">상담 신청</TabsTrigger>
-          <TabsTrigger value="reviews">후기 관리</TabsTrigger>
-          <TabsTrigger value="notices">공지사항</TabsTrigger>
-        </TabsList>
+             {/* 데이터 관리 탭 */}
+       <Tabs defaultValue="counselors" className="w-full">
+         <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
+           <TabsTrigger 
+             value="counselors" 
+             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+           >
+             상담사 관리
+           </TabsTrigger>
+           <TabsTrigger 
+             value="consultations" 
+             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+           >
+             상담 신청
+           </TabsTrigger>
+           <TabsTrigger 
+             value="reviews" 
+             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+           >
+             후기 관리
+           </TabsTrigger>
+           <TabsTrigger 
+             value="notices" 
+             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+           >
+             공지사항
+           </TabsTrigger>
+         </TabsList>
 
         <TabsContent value="counselors" className="mt-6">
           <CounselorsTab />
