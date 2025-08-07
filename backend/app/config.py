@@ -26,7 +26,12 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # CORS 설정
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://swhealing.vercel.app",
+        "https://sw-healing.vercel.app"
+    ]
     CORS_ALLOW_CREDENTIALS: bool = True
     
     # 이메일 설정

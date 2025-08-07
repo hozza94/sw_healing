@@ -16,28 +16,21 @@ python-decouple==3.8
 # 이메일
 emails==0.6.0
 jinja2==3.1.2
+email-validator==2.1.0
 
 # 유틸리티
 pydantic==2.5.0
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 
-# 테스트
-pytest==7.4.3
-pytest-asyncio==0.21.1
+# HTTP 클라이언트
 httpx==0.25.2
 
-# 개발 도구
-black==23.11.0
-isort==5.12.0
-flake8==6.1.0
-
-# 캐싱
-redis==5.0.1
-
 # 파일 업로드
-python-magic==0.4.27
 Pillow==10.1.0
 
 # CORS
-fastapi-cors==0.0.6 
+fastapi-cors==0.0.6
+
+# 추가 의존성
+email-validator==2.1.0 
