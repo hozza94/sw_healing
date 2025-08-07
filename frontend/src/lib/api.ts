@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://swhealing-production.up.railway.app';
 
 // 환경 변수 디버깅
 console.log('API_BASE_URL:', API_BASE_URL);
