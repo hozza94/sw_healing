@@ -54,6 +54,30 @@ def get_consultations(
     )
 
 
+@router.get("/public", response_model=ConsultationList)
+def get_public_consultations(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    status: Optional[ConsultationStatus] = None,
+    db: Session = Depends(get_db)
+):
+    """공개 상담 신청 목록 조회 (인증 없이 가능)"""
+    query = db.query(Consultation)
+    
+    if status:
+        query = query.filter(Consultation.status == status)
+    
+    total = query.count()
+    consultations = query.offset(skip).limit(limit).all()
+    
+    return ConsultationList(
+        consultations=consultations,
+        total=total,
+        page=skip // limit + 1,
+        size=limit
+    )
+
+
 @router.get("/admin", response_model=ConsultationList)
 def get_all_consultations(
     skip: int = Query(0, ge=0),

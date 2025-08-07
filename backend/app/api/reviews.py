@@ -84,6 +84,24 @@ def get_approved_reviews(
     total = query.count()
     reviews = query.offset(skip).limit(limit).all()
     
+    # 작성자와 상담사 정보 추가
+    for review in reviews:
+        # 작성자 정보 (익명 처리)
+        if review.user and not review.is_anonymous:
+            author_name = review.user.name
+            if author_name:
+                # 이름을 익명 처리 (예: "홍길동" -> "홍**")
+                if len(author_name) >= 2:
+                    review.author_name = author_name[0] + "**"
+                else:
+                    review.author_name = author_name + "**"
+        else:
+            review.author_name = "익명"
+        
+        # 상담사 정보
+        if review.counselor:
+            review.counselor_name = review.counselor.name
+    
     return ReviewList(
         reviews=reviews,
         total=total,

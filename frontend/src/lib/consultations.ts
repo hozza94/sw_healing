@@ -80,10 +80,22 @@ function mapConsultationResponse(response: ConsultationResponse): Consultation {
   };
 }
 
+// 날짜를 ISO 8601 형식으로 변환
+function formatDateForAPI(dateString: string): string {
+  if (!dateString) return '';
+  return `${dateString}T00:00:00`;
+}
+
 // 상담 신청 생성
 export async function createConsultation(data: CreateConsultationRequest): Promise<Consultation | null> {
   try {
-    const response = await apiClient.post<ConsultationResponse>(API_ENDPOINTS.CONSULTATIONS, data);
+    // 날짜 형식 변환
+    const apiData = {
+      ...data,
+      preferred_date: data.preferred_date ? formatDateForAPI(data.preferred_date) : undefined
+    };
+    
+    const response = await apiClient.post<ConsultationResponse>(API_ENDPOINTS.CONSULTATIONS, apiData);
     return response.data ? mapConsultationResponse(response.data) : null;
   } catch (error) {
     console.error('상담 신청에 실패했습니다:', error);

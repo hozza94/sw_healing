@@ -41,7 +41,10 @@ class ReviewInDB(ReviewBase):
 
 
 class Review(ReviewInDB):
-    pass
+    # 작성자 정보 (익명 처리)
+    author_name: Optional[str] = None
+    # 상담사 정보
+    counselor_name: Optional[str] = None
 
 
 class ReviewList(BaseModel):
