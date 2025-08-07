@@ -123,28 +123,28 @@ export default function AdminDashboard() {
 
              {/* 데이터 관리 탭 */}
        <Tabs defaultValue="counselors" className="w-full">
-         <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
+         <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg h-12">
            <TabsTrigger 
              value="counselors" 
-             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+             className="text-sm font-semibold px-4 py-2 h-10 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200 flex items-center justify-center"
            >
              상담사 관리
            </TabsTrigger>
            <TabsTrigger 
              value="consultations" 
-             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+             className="text-sm font-semibold px-4 py-2 h-10 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200 flex items-center justify-center"
            >
              상담 신청
            </TabsTrigger>
            <TabsTrigger 
              value="reviews" 
-             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+             className="text-sm font-semibold px-4 py-2 h-10 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200 flex items-center justify-center"
            >
              후기 관리
            </TabsTrigger>
            <TabsTrigger 
              value="notices" 
-             className="text-sm font-semibold px-4 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200"
+             className="text-sm font-semibold px-4 py-2 h-10 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md rounded-md transition-all duration-200 flex items-center justify-center"
            >
              공지사항
            </TabsTrigger>
