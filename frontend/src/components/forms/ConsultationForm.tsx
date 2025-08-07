@@ -19,12 +19,17 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
   const selectedCounselorId = counselorId || searchParams.get('counselor');
   
   const [formData, setFormData] = useState<CreateConsultationRequest>({
-    counselor_id: selectedCounselorId || '',
-    consultation_type: '',
+    consultation_type: 'individual',
+    title: '',
+    description: '',
     preferred_date: '',
     preferred_time: '',
-    consultation_method: 'online',
-    description: ''
+    contact_name: '',
+    contact_phone: '',
+    contact_email: '',
+    urgency_level: 'normal',
+    is_confidential: true,
+    counselor_id: selectedCounselorId || undefined
   });
   
   const [counselor, setCounselor] = useState<Counselor | null>(null);
@@ -42,7 +47,7 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
     }
   });
 
-  const handleInputChange = (field: keyof CreateConsultationRequest, value: string) => {
+  const handleInputChange = (field: keyof CreateConsultationRequest, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -52,11 +57,6 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.counselor_id) {
-      alert('상담사를 선택해주세요.');
-      return;
-    }
-
     setIsSubmitting(true);
     
     try {
@@ -117,6 +117,19 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
               </div>
             )}
 
+            {/* 상담 제목 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                상담 제목 *
+              </label>
+              <Input
+                value={formData.title}
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                placeholder="상담하고 싶은 내용의 제목을 입력하세요"
+                required
+              />
+            </div>
+
             {/* 상담 유형 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -124,60 +137,43 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
               </label>
               <select
                 value={formData.consultation_type}
-                onChange={(e) => handleInputChange('consultation_type', e.target.value)}
+                onChange={(e) => handleInputChange('consultation_type', e.target.value as any)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
-                <option value="">상담 유형을 선택하세요</option>
                 <option value="individual">개인 상담</option>
                 <option value="couple">부부 상담</option>
                 <option value="family">가족 상담</option>
                 <option value="youth">청소년 상담</option>
-                <option value="trauma">트라우마 상담</option>
+                <option value="other">기타</option>
               </select>
             </div>
 
-            {/* 상담 방법 */}
+            {/* 긴급도 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                상담 방법 *
+                긴급도 *
               </label>
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="consultation_method"
-                    value="online"
-                    checked={formData.consultation_method === 'online'}
-                    onChange={(e) => handleInputChange('consultation_method', e.target.value)}
-                    className="text-blue-600"
-                  />
-                  <span>온라인 상담 (화상)</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="consultation_method"
-                    value="offline"
-                    checked={formData.consultation_method === 'offline'}
-                    onChange={(e) => handleInputChange('consultation_method', e.target.value)}
-                    className="text-blue-600"
-                  />
-                  <span>대면 상담</span>
-                </label>
-              </div>
+              <select
+                value={formData.urgency_level}
+                onChange={(e) => handleInputChange('urgency_level', e.target.value as any)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="normal">일반</option>
+                <option value="urgent">긴급</option>
+              </select>
             </div>
 
             {/* 희망 날짜 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                희망 날짜 *
+                희망 날짜
               </label>
               <Input
                 type="date"
                 value={formData.preferred_date}
                 onChange={(e) => handleInputChange('preferred_date', e.target.value)}
-                required
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
@@ -185,13 +181,12 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
             {/* 희망 시간 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                희망 시간 *
+                희망 시간
               </label>
               <select
                 value={formData.preferred_time}
                 onChange={(e) => handleInputChange('preferred_time', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
               >
                 <option value="">시간을 선택하세요</option>
                 <option value="09:00">09:00</option>
@@ -203,6 +198,45 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
                 <option value="16:00">16:00</option>
                 <option value="17:00">17:00</option>
               </select>
+            </div>
+
+            {/* 연락처 정보 */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이름 *
+                </label>
+                <Input
+                  value={formData.contact_name}
+                  onChange={(e) => handleInputChange('contact_name', e.target.value)}
+                  placeholder="홍길동"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  연락처 *
+                </label>
+                <Input
+                  value={formData.contact_phone}
+                  onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                  placeholder="010-1234-5678"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                이메일 *
+              </label>
+              <Input
+                type="email"
+                value={formData.contact_email}
+                onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                placeholder="example@email.com"
+                required
+              />
             </div>
 
             {/* 상담 내용 */}
@@ -218,6 +252,25 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
                 placeholder="상담하고 싶은 내용을 자유롭게 작성해주세요..."
                 required
               />
+            </div>
+
+            {/* 개인정보 동의 */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  checked={formData.is_confidential}
+                  onChange={(e) => handleInputChange('is_confidential', e.target.checked)}
+                  className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label className="text-gray-700 leading-relaxed">
+                  <span className="font-medium">개인정보 수집 및 이용에 동의합니다.</span>
+                  <br />
+                  <span className="text-sm text-gray-600">
+                    입력하신 정보는 상담 목적으로만 사용되며, 철저히 보호됩니다.
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* 제출 버튼 */}
