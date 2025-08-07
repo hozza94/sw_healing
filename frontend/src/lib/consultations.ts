@@ -5,9 +5,9 @@ export interface ConsultationResponse {
   id: number;
   user_id: number;
   counselor_id?: number;
-  consultation_type: 'individual' | 'couple' | 'family' | 'youth' | 'other';
-  status: 'pending' | 'reviewing' | 'confirmed' | 'completed' | 'cancelled';
-  urgency_level: 'normal' | 'urgent';
+  consultation_type: 'INDIVIDUAL' | 'COUPLE' | 'FAMILY' | 'YOUTH' | 'TRAUMA' | 'OTHER';
+  status: 'PENDING' | 'REVIEWING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  urgency_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   title: string;
   description: string;
   preferred_date?: string;
@@ -41,7 +41,7 @@ export interface Consultation {
 }
 
 export interface CreateConsultationRequest {
-  consultation_type: 'individual' | 'couple' | 'family' | 'youth' | 'other';
+  consultation_type: 'INDIVIDUAL' | 'COUPLE' | 'FAMILY' | 'YOUTH' | 'TRAUMA' | 'OTHER';
   title: string;
   description: string;
   preferred_date?: string;
@@ -49,14 +49,14 @@ export interface CreateConsultationRequest {
   contact_name: string;
   contact_phone: string;
   contact_email: string;
-  urgency_level?: 'normal' | 'urgent';
+  urgency_level?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   is_confidential?: boolean;
   counselor_id?: string;
 }
 
 export interface UpdateConsultationRequest extends Partial<CreateConsultationRequest> {
   id: string;
-  status?: 'pending' | 'reviewing' | 'confirmed' | 'completed' | 'cancelled';
+  status?: 'PENDING' | 'REVIEWING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 }
 
 // 백엔드 데이터를 프론트엔드 구조로 변환

@@ -14,20 +14,20 @@ export default function Home() {
               전문 상담사와 함께하는 마음 치유
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
             마음을 치유하는
             <span className="text-blue-600"> 따뜻한 공간</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed font-medium">
             전문 상담사와 함께 당신의 마음을 들여다보고, 
             더 나은 내일을 위한 힘을 찾아보세요.
             언제든지 편안하게 문의해주세요.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Button size="lg" asChild className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-4">
+            <Button size="lg" asChild className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-lg px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl">
               <Link href="/consultation">상담 신청하기</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild className="border-2 border-blue-200 text-blue-600 hover:bg-blue-50 text-lg px-8 py-4">
+            <Button variant="outline" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-50 hover:text-blue-700 border-2 border-blue-300 hover:border-blue-400 text-lg px-8 py-4 font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl">
               <Link href="/counselors">상담사 소개</Link>
             </Button>
           </div>
@@ -37,8 +37,8 @@ export default function Home() {
       {/* 서비스 섹션 */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">우리의 서비스</h2>
-          <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6 tracking-tight">우리의 서비스</h2>
+          <p className="text-gray-600 max-w-3xl mx-auto text-lg leading-relaxed font-medium">
             다양한 상담 분야에서 전문적인 도움을 제공합니다.
             각 분야별 전문 상담사가 최적의 솔루션을 제시합니다.
           </p>

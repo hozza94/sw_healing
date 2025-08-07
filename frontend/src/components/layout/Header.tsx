@@ -10,7 +10,7 @@ export default function Header() {
             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg">H</span>
             </div>
-            <Link href="/" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+            <Link href="/" className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors tracking-tight">
               수원 힐링 상담센터
             </Link>
           </div>
@@ -32,10 +32,10 @@ export default function Header() {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50">
+            <Button variant="outline" asChild className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium px-6 py-2">
               <Link href="/auth/login">로그인</Link>
             </Button>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Button asChild className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl font-bold px-6 py-2">
               <Link href="/auth/register">회원가입</Link>
             </Button>
           </div>

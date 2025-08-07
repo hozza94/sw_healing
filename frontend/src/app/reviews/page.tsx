@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { getApprovedReviews, Review } from "@/lib/reviews"
 import { useEffect, useState } from "react"
 
 export default function ReviewsPage() {
+  const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,11 +85,11 @@ export default function ReviewsPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-8">
             {reviews.map((review) => (
-              <Card key={review.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+              <Card key={review.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => router.push(`/reviews/${review.id}`)}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-xl text-gray-900">{review.title}</CardTitle>
+                      <CardTitle className="text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{review.title}</CardTitle>
                       <CardDescription className="text-blue-600 font-medium">
                         {review.counselor_name ? `${review.counselor_name} 상담사` : '일반 후기'}
                       </CardDescription>
@@ -107,10 +109,24 @@ export default function ReviewsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 leading-relaxed mb-4">{review.content}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>평점: {review.rating}/5</span>
-                    <span>작성자: {review.author_name || '익명'}</span>
+                  <p className="text-gray-600 leading-relaxed mb-4 line-clamp-3">{review.content}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <span>평점: {review.rating}/5</span>
+                      <span>작성자: {review.author_name || '익명'}</span>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild 
+                      className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/reviews/${review.id}`);
+                      }}
+                    >
+                      <span>자세히 보기</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -127,9 +143,9 @@ export default function ReviewsPage() {
                 전문 상담사와 함께 당신의 마음을 들여다보고, 
                 더 나은 내일을 위한 힘을 찾아보세요.
               </p>
-              <Button variant="secondary" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4">
-                <Link href="/consultation">상담 신청하기</Link>
-              </Button>
+                                        <Button variant="secondary" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl">
+                            <Link href="/consultation">상담 신청하기</Link>
+                          </Button>
             </CardContent>
           </Card>
         </div>

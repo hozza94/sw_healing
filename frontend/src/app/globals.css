@@ -1,3 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Noto Sans KR', 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    font-family: 'Noto Sans KR', 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Noto Sans KR', 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  
+  .font-display {
+    font-family: 'Inter', 'Noto Sans KR', system-ui, sans-serif;
+  }
+}

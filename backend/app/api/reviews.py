@@ -88,7 +88,7 @@ def get_approved_reviews(
     for review in reviews:
         # 작성자 정보 (익명 처리)
         if review.user and not review.is_anonymous:
-            author_name = review.user.name
+            author_name = review.user.full_name
             if author_name:
                 # 이름을 익명 처리 (예: "홍길동" -> "홍**")
                 if len(author_name) >= 2:
@@ -113,11 +113,14 @@ def get_approved_reviews(
 @router.get("/{review_id}", response_model=ReviewSchema)
 def get_review(
     review_id: int,
-    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """후기 상세 조회"""
-    review = db.query(Review).filter(Review.id == review_id).first()
+    """후기 상세 조회 (승인된 후기만)"""
+    review = db.query(Review).filter(
+        Review.id == review_id,
+        Review.is_approved == True,
+        Review.is_active == True
+    ).first()
     
     if not review:
         raise HTTPException(
@@ -125,12 +128,22 @@ def get_review(
             detail="후기를 찾을 수 없습니다."
         )
     
-    # 본인의 후기이거나 관리자인 경우만 조회 가능
-    if review.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="접근 권한이 없습니다."
-        )
+    # 작성자와 상담사 정보 추가
+    # 작성자 정보 (익명 처리)
+    if review.user and not review.is_anonymous:
+        author_name = review.user.full_name
+        if author_name:
+            # 이름을 익명 처리 (예: "홍길동" -> "홍**")
+            if len(author_name) >= 2:
+                review.author_name = author_name[0] + "**"
+            else:
+                review.author_name = author_name + "**"
+    else:
+        review.author_name = "익명"
+    
+    # 상담사 정보
+    if review.counselor:
+        review.counselor_name = review.counselor.name
     
     return review
 

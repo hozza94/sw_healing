@@ -13,7 +13,7 @@ class ConsultationBase(BaseModel):
     contact_name: str
     contact_phone: str
     contact_email: EmailStr
-    urgency_level: UrgencyLevel = UrgencyLevel.NORMAL
+    urgency_level: UrgencyLevel = UrgencyLevel.MEDIUM
     is_confidential: bool = True
 
 

@@ -63,8 +63,8 @@ export default function CounselorsPage() {
       {/* 메인 콘텐츠 */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">전문 상담사 소개</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl font-bold text-gray-900 mb-6 tracking-tight">전문 상담사 소개</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
             각 분야별 전문성을 갖춘 상담사들이 여러분의 마음 치유를 도와드립니다.
             모든 상담사는 지속적인 교육과 훈련을 통해 최고의 서비스를 제공합니다.
           </p>
@@ -134,11 +134,11 @@ export default function CounselorsPage() {
                       <h4 className="font-semibold text-gray-900 mb-2">소개</h4>
                       <p className="text-gray-600 leading-relaxed">{counselor.description}</p>
                     </div>
-                    <div className="pt-4">
-                      <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
-                        <Link href={`/consultation?counselor=${counselor.id}`}>상담 예약하기</Link>
-                      </Button>
-                    </div>
+                                                    <div className="pt-4">
+                                  <Button asChild className="w-full px-6 py-3 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl">
+                                    <Link href={`/consultation?counselor=${counselor.id}`}>상담 예약하기</Link>
+                                  </Button>
+                                </div>
                   </div>
                 </CardContent>
               </Card>
@@ -155,9 +155,9 @@ export default function CounselorsPage() {
                 전문 상담사와 함께 당신의 마음을 들여다보고, 
                 더 나은 내일을 위한 힘을 찾아보세요.
               </p>
-              <Button variant="secondary" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4">
-                <Link href="/consultation">상담 신청하기</Link>
-              </Button>
+                                      <Button variant="secondary" size="lg" asChild className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl">
+                          <Link href="/consultation">상담 신청하기</Link>
+                        </Button>
             </CardContent>
           </Card>
         </div>

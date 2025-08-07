@@ -6,24 +6,27 @@ from ..database import Base
 
 
 class ConsultationType(str, enum.Enum):
-    INDIVIDUAL = "individual"  # 개인상담
-    COUPLE = "couple"  # 부부상담
-    FAMILY = "family"  # 가족상담
-    YOUTH = "youth"  # 청소년상담
-    OTHER = "other"  # 기타
+    INDIVIDUAL = "INDIVIDUAL"  # 개인상담
+    COUPLE = "COUPLE"  # 부부상담
+    FAMILY = "FAMILY"  # 가족상담
+    YOUTH = "YOUTH"  # 청소년상담
+    TRAUMA = "TRAUMA"  # 트라우마상담
+    OTHER = "OTHER"  # 기타
 
 
 class ConsultationStatus(str, enum.Enum):
-    PENDING = "pending"  # 접수
-    REVIEWING = "reviewing"  # 검토
-    CONFIRMED = "confirmed"  # 확정
-    COMPLETED = "completed"  # 완료
-    CANCELLED = "cancelled"  # 취소
+    PENDING = "PENDING"  # 접수
+    REVIEWING = "REVIEWING"  # 검토
+    CONFIRMED = "CONFIRMED"  # 확정
+    COMPLETED = "COMPLETED"  # 완료
+    CANCELLED = "CANCELLED"  # 취소
 
 
 class UrgencyLevel(str, enum.Enum):
-    NORMAL = "normal"  # 일반
-    URGENT = "urgent"  # 긴급
+    LOW = "LOW"  # 낮음
+    MEDIUM = "MEDIUM"  # 보통
+    HIGH = "HIGH"  # 높음
+    URGENT = "URGENT"  # 긴급
 
 
 class Consultation(Base):
@@ -34,7 +37,7 @@ class Consultation(Base):
     counselor_id = Column(Integer, ForeignKey("counselors.id"), nullable=True)
     consultation_type = Column(Enum(ConsultationType), nullable=False)
     status = Column(Enum(ConsultationStatus), default=ConsultationStatus.PENDING)
-    urgency_level = Column(Enum(UrgencyLevel), default=UrgencyLevel.NORMAL)
+    urgency_level = Column(Enum(UrgencyLevel), default=UrgencyLevel.MEDIUM)
     
     # 상담 내용
     title = Column(String(200), nullable=False)

@@ -6,15 +6,17 @@ from ..database import Base
 
 
 class NoticeType(str, enum.Enum):
-    GENERAL = "general"  # 일반
-    URGENT = "urgent"  # 긴급
-    EVENT = "event"  # 이벤트
+    GENERAL = "GENERAL"  # 일반
+    IMPORTANT = "IMPORTANT"  # 중요
+    URGENT = "URGENT"  # 긴급
+    EVENT = "EVENT"  # 이벤트
+    SERVICE = "SERVICE"  # 서비스
 
 
 class NoticeStatus(str, enum.Enum):
-    DRAFT = "draft"  # 임시저장
-    PUBLISHED = "published"  # 발행
-    HIDDEN = "hidden"  # 비공개
+    DRAFT = "DRAFT"  # 임시저장
+    PUBLISHED = "PUBLISHED"  # 발행
+    HIDDEN = "HIDDEN"  # 비공개
 
 
 class Notice(Base):

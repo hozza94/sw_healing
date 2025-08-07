@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { getPublishedNotices, Notice } from "@/lib/notices"
 import { useEffect, useState } from "react"
 
 export default function NoticesPage() {
+  const router = useRouter();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export default function NoticesPage() {
         ) : (
           <div className="space-y-6">
             {notices.map((notice) => (
-              <Card key={notice.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
+              <Card key={notice.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => router.push(`/notices/${notice.id}`)}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -116,7 +118,7 @@ export default function NoticesPage() {
                           {getNoticeTypeLabel(notice.notice_type)}
                         </Badge>
                       </div>
-                      <CardTitle className="text-xl text-gray-900">{notice.title}</CardTitle>
+                      <CardTitle className="text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{notice.title}</CardTitle>
                       <CardDescription className="text-gray-600">
                         {new Date(notice.created_at).toLocaleDateString('ko-KR', {
                           year: 'numeric',
@@ -143,8 +145,17 @@ export default function NoticesPage() {
                     <div className="text-sm text-gray-500">
                       상태: {notice.status === 'published' ? '발행됨' : notice.status}
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/notices/${notice.id}`}>자세히 보기</Link>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild 
+                      className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/notices/${notice.id}`);
+                      }}
+                    >
+                      <span>자세히 보기</span>
                     </Button>
                   </div>
                 </CardContent>

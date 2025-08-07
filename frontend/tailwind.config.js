@@ -4,7 +4,21 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Noto Sans KR', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'Noto Sans KR', 'system-ui', 'sans-serif'],
+        korean: ['Noto Sans KR', 'system-ui', 'sans-serif'],
+      },
+      letterSpacing: {
+        'tighter': '-0.05em',
+        'tight': '-0.025em',
+        'normal': '0em',
+        'wide': '0.025em',
+        'wider': '0.05em',
+        'widest': '0.1em',
+      },
+    },
   },
   plugins: [],
 } 

@@ -94,6 +94,17 @@ export async function createReview(data: CreateReviewRequest): Promise<Review | 
   }
 }
 
+// 특정 후기 정보 가져오기
+export async function getReview(id: string): Promise<Review | null> {
+  try {
+    const response = await apiClient.get<ReviewResponse>(API_ENDPOINTS.REVIEW(id));
+    return response.data ? mapReviewResponse(response.data) : null;
+  } catch (error) {
+    console.error('후기 정보를 가져오는데 실패했습니다:', error);
+    return null;
+  }
+}
+
 // 후기 수정
 export async function updateReview(data: UpdateReviewRequest): Promise<Review | null> {
   try {
