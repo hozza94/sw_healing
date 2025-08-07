@@ -39,7 +39,11 @@ class ApiClient {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
 
-      return data;
+      // 백엔드에서 직접 데이터를 반환하므로 ApiResponse 구조로 래핑
+      return {
+        data: data,
+        message: 'Success'
+      };
     } catch (error) {
       console.error('API request failed:', error);
       throw error;

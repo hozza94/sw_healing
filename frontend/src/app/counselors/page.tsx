@@ -1,21 +1,65 @@
+'use client';
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { getCounselors, Counselor } from "@/lib/counselors"
+import { useEffect, useState } from "react"
 
-// 서버 컴포넌트로 데이터 가져오기
-async function getCounselorsData(): Promise<Counselor[]> {
-  try {
-    return await getCounselors();
-  } catch (error) {
-    console.error('상담사 데이터를 가져오는데 실패했습니다:', error);
-    return [];
+export default function CounselorsPage() {
+  const [counselors, setCounselors] = useState<Counselor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadCounselors() {
+      try {
+        console.log('🎬 CounselorsPage 컴포넌트 시작');
+        const data = await getCounselors();
+        console.log('📋 CounselorsPage에서 받은 counselors:', data);
+        console.log('📏 counselors 배열 길이:', data.length);
+        setCounselors(data);
+      } catch (err) {
+        console.error('❌ 상담사 데이터 로딩 실패:', err);
+        setError('상담사 정보를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadCounselors();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="text-4xl mb-4">⏳</div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">상담사 정보를 불러오는 중...</h3>
+          </div>
+        </div>
+      </div>
+    );
   }
-}
 
-export default async function CounselorsPage() {
-  const counselors = await getCounselorsData();
+  if (error) {
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="text-6xl mb-4">😔</div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">{error}</h3>
+            <p className="text-gray-600 mb-8">잠시 후 다시 시도해주세요.</p>
+            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/">홈으로 돌아가기</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100">

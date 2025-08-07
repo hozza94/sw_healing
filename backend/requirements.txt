@@ -40,7 +40,4 @@ python-magic==0.4.27
 Pillow==10.1.0
 
 # CORS
-fastapi-cors==0.0.6
-
-# 환경변수
-python-decouple==3.8 
+fastapi-cors==0.0.6 
