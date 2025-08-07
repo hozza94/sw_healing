@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from .config import settings
 from .database import create_tables
 from .api import auth, consultations, counselors, reviews, notices
@@ -24,17 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# HTTPS 강제 적용 미들웨어
-@app.middleware("http")
-async def force_https(request: Request, call_next):
-    """HTTPS 강제 적용 미들웨어"""
-    # 프로덕션 환경에서만 HTTPS 강제 적용
-    if settings.ENVIRONMENT == "production" and request.url.scheme == "http":
-        https_url = str(request.url).replace("http://", "https://")
-        return RedirectResponse(url=https_url, status_code=301)
-    
-    response = await call_next(request)
-    return response
+# 미들웨어 제거 - Railway에서 자동으로 HTTPS 처리
 
 # 라우터 등록
 app.include_router(auth.router, prefix="/api")
