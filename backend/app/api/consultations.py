@@ -13,12 +13,12 @@ router = APIRouter(prefix="/consultations", tags=["상담 신청"])
 @router.post("/", response_model=ConsultationSchema)
 def create_consultation(
     consultation_data: ConsultationCreate,
-    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """상담 신청 생성"""
+    """상담 신청 생성 (인증 없이 가능)"""
+    # 임시로 user_id를 1로 설정 (기본 사용자)
     db_consultation = Consultation(
-        user_id=current_user.id,
+        user_id=1,  # 기본 사용자 ID
         **consultation_data.dict()
     )
     
