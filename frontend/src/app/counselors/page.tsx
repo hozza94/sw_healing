@@ -15,13 +15,10 @@ export default function CounselorsPage() {
   useEffect(() => {
     async function loadCounselors() {
       try {
-        console.log('🎬 CounselorsPage 컴포넌트 시작');
         const data = await getCounselors();
-        console.log('📋 CounselorsPage에서 받은 counselors:', data);
-        console.log('📏 counselors 배열 길이:', data.length);
         setCounselors(data);
       } catch (err) {
-        console.error('❌ 상담사 데이터 로딩 실패:', err);
+        console.error('상담사 데이터 로딩 실패:', err);
         setError('상담사 정보를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
