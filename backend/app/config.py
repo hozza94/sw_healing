@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     ENVIRONMENT: str = "development"
     
-    # 데이터베이스 설정 (Turso + Fallback)
+    # 데이터베이스 설정 (환경 변수로 받음)
     DATABASE_URL: str = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
     DATABASE_AUTH_TOKEN: str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NTE5YTM5Zi1kZTc5LTQxNGYtOTA0ZC1kOGI2NDliMDZmN2MiLCJpYXQiOjE3NTQ0NDMzOTksInJpZCI6IjA5OGQzZTNhLWE0OWMtNGQ0NC04MGIxLWVjOTM3MzY4YjQ5MSJ9.FZgSEU3NZJj7lhaLHfnNg6KxoLUGO9u9MLsa9nLI3HBCKVf6Ke1O4-m0WMs_CQdtcLEAYL3xNIID8E8HnRqzAA"
     DATABASE_FALLBACK_URL: str = "sqlite:///./suwon_healing.db"
@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     # Redis 설정
     REDIS_URL: str = "redis://localhost:6379"
     
-    # 보안 설정
+    # 보안 설정 (환경 변수로 받음)
     SECRET_KEY: str = "your-super-secret-key-here-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # CORS 설정
+    # CORS 설정 (환경 변수로 받음)
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
@@ -62,6 +62,17 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # 환경 변수에서 CORS_ORIGINS를 파싱
+        if os.getenv("CORS_ORIGINS"):
+            self.CORS_ORIGINS = os.getenv("CORS_ORIGINS").split(",")
+        
+        # 프로덕션 환경에서는 DEBUG를 False로 설정
+        if self.ENVIRONMENT == "production":
+            self.DEBUG = False
 
 
 # 전역 설정 인스턴스

@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 미들웨어 제거 - Railway에서 자동으로 HTTPS 처리
+# HTTPS는 배포 플랫폼에서 자동으로 처리됩니다
 
 # 라우터 등록
 app.include_router(auth.router, prefix="/api")
