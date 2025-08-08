@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from typing import List, Optional, Union
 import os
 
 
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # CORS 설정 (환경 변수로 받음)
-    CORS_ORIGINS: List[str] = [
+    CORS_ORIGINS: Union[str, List[str]] = [
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
         "https://swhealing.vercel.app",
@@ -66,9 +66,9 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        # 환경 변수에서 CORS_ORIGINS를 파싱
-        if os.getenv("CORS_ORIGINS"):
-            self.CORS_ORIGINS = os.getenv("CORS_ORIGINS").split(",")
+        # CORS_ORIGINS를 리스트로 변환
+        if isinstance(self.CORS_ORIGINS, str):
+            self.CORS_ORIGINS = [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
         
         # 프로덕션 환경에서는 DEBUG를 False로 설정
         if self.ENVIRONMENT == "production":
