@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({
       message: '상담사가 성공적으로 등록되었습니다.',
-      id: result.lastInsertId
+      id: result.lastInsertRowid
     })
   } catch (error) {
     console.error('Error creating counselor:', error)
