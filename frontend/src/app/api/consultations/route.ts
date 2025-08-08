@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({
       message: '상담 예약이 성공적으로 등록되었습니다.',
-      id: result.lastInsertRowid
+      id: Number(result.lastInsertRowid)
     })
   } catch (error) {
     console.error('Error creating consultation:', error)

@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({
       message: '공지사항이 성공적으로 등록되었습니다.',
-      id: result.lastInsertRowid
+      id: Number(result.lastInsertRowid)
     })
   } catch (error) {
     console.error('Error creating notice:', error)
