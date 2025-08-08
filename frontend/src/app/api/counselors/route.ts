@@ -3,22 +3,38 @@ import { createClient } from '@libsql/client'
 
 export async function GET() {
   try {
+    console.log('GET /api/counselors - 시작')
+    
     const databaseUrl = process.env.DATABASE_URL
     const authToken = process.env.DATABASE_AUTH_TOKEN
     
+    console.log('환경 변수 확인:', { 
+      hasDatabaseUrl: !!databaseUrl, 
+      hasAuthToken: !!authToken 
+    })
+    
     if (!databaseUrl) {
+      console.log('DATABASE_URL이 설정되지 않음')
       return NextResponse.json(
         { error: 'DATABASE_URL이 설정되지 않았습니다.' },
         { status: 500 }
       )
     }
 
+    console.log('Turso 클라이언트 생성 중...')
     const client = createClient({
       url: databaseUrl,
       authToken: authToken,
     })
 
+    console.log('데이터베이스 쿼리 실행 중...')
     const result = await client.execute('SELECT * FROM counselors WHERE is_active = true')
+    
+    console.log('쿼리 결과:', { 
+      rowCount: result.rows.length,
+      columns: result.columns 
+    })
+    
     return NextResponse.json({
       counselors: result.rows,
       count: result.rows.length
@@ -26,7 +42,10 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching counselors:', error)
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { 
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -34,6 +53,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    console.log('POST /api/counselors - 시작')
+    
     const databaseUrl = process.env.DATABASE_URL
     const authToken = process.env.DATABASE_AUTH_TOKEN
     
