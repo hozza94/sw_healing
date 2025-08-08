@@ -39,8 +39,17 @@ export interface UpdateConsultationRequest {
 // 상담 신청 목록 조회
 export async function getConsultations(): Promise<ConsultationList | null> {
   try {
-    const response = await apiClient.get<ConsultationList>(API_ENDPOINTS.CONSULTATIONS);
-    return response.data || null;
+    const response = await apiClient.get<{consultations: Consultation[], count: number}>(API_ENDPOINTS.CONSULTATIONS);
+    
+    if (response.data) {
+      return {
+        consultations: response.data.consultations,
+        total: response.data.count,
+        page: 1,
+        size: response.data.count
+      };
+    }
+    return null;
   } catch (error) {
     console.error('상담 신청 목록을 가져오는데 실패했습니다:', error);
     return null;

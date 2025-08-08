@@ -67,14 +67,14 @@ function mapCounselorResponse(response: CounselorResponse): Counselor {
 // 모든 상담사 목록 가져오기 (관리자용)
 export async function getCounselors(): Promise<{counselors: Counselor[], total: number, page: number, size: number} | null> {
   try {
-    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
+    const response = await apiClient.get<{counselors: CounselorResponse[], count: number}>(API_ENDPOINTS.COUNSELORS);
     
     if (response.data) {
       return {
         counselors: response.data.counselors.map(mapCounselorResponse),
-        total: response.data.total,
-        page: response.data.page,
-        size: response.data.size
+        total: response.data.count,
+        page: 1,
+        size: response.data.count
       };
     }
     return null;
@@ -87,7 +87,7 @@ export async function getCounselors(): Promise<{counselors: Counselor[], total: 
 // 승인된 상담사 목록 가져오기 (일반 사용자용)
 export async function getApprovedCounselors(): Promise<Counselor[]> {
   try {
-    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
+    const response = await apiClient.get<{counselors: CounselorResponse[], count: number}>(API_ENDPOINTS.COUNSELORS);
     
     // 백엔드 응답 구조에서 counselors 배열을 추출하고 매핑
     const counselors = response.data?.counselors || [];
