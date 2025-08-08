@@ -1,8 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:8000';
-
-// 환경 변수 디버깅
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+// Vercel API Routes를 사용하므로 상대 경로 사용
+const API_BASE_URL = '';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -21,14 +18,11 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    // trailing slash 추가 (API 엔드포인트에 맞춤)
-    const cleanEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
-    const url = `${this.baseURL}${cleanEndpoint}`;
+    const url = `${this.baseURL}${endpoint}`;
     
     const defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Cache-Control': 'no-cache',
     };
 
     const config: RequestInit = {
@@ -37,24 +31,16 @@ class ApiClient {
         ...defaultHeaders,
         ...options.headers,
       },
-      redirect: 'follow', // 리다이렉트 허용
     };
 
     try {
       const response = await fetch(url, config);
-      
-      // 리다이렉트 처리
-      if (response.redirected) {
-        console.log('리다이렉트 발생:', response.url);
-      }
-      
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
-      // 백엔드에서 직접 데이터를 반환하므로 ApiResponse 구조로 래핑
       return {
         data: data,
         message: 'Success'
@@ -95,7 +81,7 @@ class ApiClient {
 // API 클라이언트 인스턴스 생성
 export const apiClient = new ApiClient(API_BASE_URL);
 
-// API 엔드포인트 상수
+// API 엔드포인트 상수 (Vercel API Routes)
 export const API_ENDPOINTS = {
   // 상담 관련
   CONSULTATIONS: '/api/consultations',
@@ -119,5 +105,5 @@ export const API_ENDPOINTS = {
   AUTH_REFRESH: '/api/auth/refresh',
   
   // 헬스 체크
-  HEALTH: '/health',
+  HEALTH: '/api/health',
 } as const;
