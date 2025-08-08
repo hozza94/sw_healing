@@ -54,10 +54,20 @@ export async function POST(request: Request) {
     // 리뷰 생성 로직
     const { user_id, counselor_id, rating, comment } = body
     
+    // 데이터 타입 안전하게 변환
+    const safeArgs = [
+      user_id ? Number(user_id) : null,
+      counselor_id ? Number(counselor_id) : null,
+      rating ? Number(rating) : 5,
+      comment ? String(comment) : null
+    ]
+    
+    console.log('전송할 데이터:', safeArgs)
+    
     const result = await client.execute({
       sql: `INSERT INTO reviews (user_id, counselor_id, rating, comment) 
              VALUES (?, ?, ?, ?)`,
-      args: [user_id, counselor_id, rating, comment]
+      args: safeArgs
     })
     
     // 상담사의 평점 업데이트

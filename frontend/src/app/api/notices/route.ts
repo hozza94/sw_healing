@@ -54,10 +54,19 @@ export async function POST(request: Request) {
     // 공지사항 생성 로직
     const { title, content, author } = body
     
+    // 데이터 타입 안전하게 변환
+    const safeArgs = [
+      title ? String(title) : '',
+      content ? String(content) : '',
+      author ? String(author) : '관리자'
+    ]
+    
+    console.log('전송할 데이터:', safeArgs)
+    
     const result = await client.execute({
       sql: `INSERT INTO notices (title, content, author, is_published) 
              VALUES (?, ?, ?, true)`,
-      args: [title, content, author]
+      args: safeArgs
     })
     
     return NextResponse.json({

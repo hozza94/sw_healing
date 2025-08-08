@@ -54,10 +54,21 @@ export async function POST(request: Request) {
     // 상담 예약 생성 로직
     const { user_id, counselor_id, appointment_date, duration, notes } = body
     
+    // 데이터 타입 안전하게 변환
+    const safeArgs = [
+      user_id ? Number(user_id) : null,
+      counselor_id ? Number(counselor_id) : null,
+      appointment_date ? String(appointment_date) : null,
+      duration ? Number(duration) : 60,
+      notes ? String(notes) : null
+    ]
+    
+    console.log('전송할 데이터:', safeArgs)
+    
     const result = await client.execute({
       sql: `INSERT INTO consultations (user_id, counselor_id, appointment_date, duration, status, notes) 
              VALUES (?, ?, ?, ?, 'pending', ?)`,
-      args: [user_id, counselor_id, appointment_date, duration || 60, notes]
+      args: safeArgs
     })
     
     return NextResponse.json({
