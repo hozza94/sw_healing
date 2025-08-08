@@ -83,7 +83,6 @@ export async function POST(request: Request) {
       user_id ? Number(user_id) : 1, // 기본 사용자 ID
       Number(counselor_id),
       appointmentDate ? String(appointmentDate) : new Date().toISOString(),
-      duration ? Number(duration) : 60,
       notes || description || '', // notes 또는 description 사용
       consultation_type || 'INDIVIDUAL',
       urgency_level || 'MEDIUM'
@@ -92,8 +91,8 @@ export async function POST(request: Request) {
     console.log('전송할 데이터:', safeArgs)
     
     const result = await client.execute({
-      sql: `INSERT INTO consultations (user_id, counselor_id, preferred_date, duration, notes, consultation_type, urgency_level, status) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      sql: `INSERT INTO consultations (user_id, counselor_id, preferred_date, notes, consultation_type, urgency_level, status) 
+             VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
       args: safeArgs
     })
     
