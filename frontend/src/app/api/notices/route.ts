@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@libsql/client'
 
-const client = createClient({
-  url: process.env.DATABASE_URL!,
-  authToken: process.env.DATABASE_AUTH_TOKEN,
-})
-
 export async function GET() {
   try {
+    const databaseUrl = process.env.DATABASE_URL
+    const authToken = process.env.DATABASE_AUTH_TOKEN
+    
+    if (!databaseUrl) {
+      return NextResponse.json(
+        { error: 'DATABASE_URL이 설정되지 않았습니다.' },
+        { status: 500 }
+      )
+    }
+
+    const client = createClient({
+      url: databaseUrl,
+      authToken: authToken,
+    })
+
     const result = await client.execute('SELECT * FROM notices WHERE is_published = true ORDER BY created_at DESC')
     return NextResponse.json({
       notices: result.rows,
@@ -24,6 +34,21 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const databaseUrl = process.env.DATABASE_URL
+    const authToken = process.env.DATABASE_AUTH_TOKEN
+    
+    if (!databaseUrl) {
+      return NextResponse.json(
+        { error: 'DATABASE_URL이 설정되지 않았습니다.' },
+        { status: 500 }
+      )
+    }
+
+    const client = createClient({
+      url: databaseUrl,
+      authToken: authToken,
+    })
+
     const body = await request.json()
     
     // 공지사항 생성 로직
