@@ -1,6 +1,0 @@
-{
-  "rootDirectory": "frontend",
-  "framework": "nextjs",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev"
-}

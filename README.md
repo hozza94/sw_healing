@@ -4,36 +4,35 @@
 
 ## 🚀 기술 스택
 
-### Backend
-- **Framework**: FastAPI (Python)
-- **Database**: SQLite (개발) / PostgreSQL (프로덕션)
-- **ORM**: SQLAlchemy
-- **Authentication**: JWT
-- **Validation**: Pydantic
-
-### Frontend
+### Full-Stack (Vercel 배포)
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
+- **Database**: Turso (SQLite)
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
+- **API**: Next.js API Routes
+- **Deployment**: Vercel
 
 ## 📁 프로젝트 구조
 
 ```
 suwon_healing/
 ├── docs/              # 문서
-├── backend/           # FastAPI 백엔드
-├── frontend/          # Next.js 프론트엔드
-└── docker-compose.yml # 개발 환경
+├── backend/           # 기존 FastAPI 백엔드 (참고용)
+├── frontend/          # Next.js 프론트엔드 + API Routes
+└── README.md
 ```
+
+## 🌐 배포된 사이트
+
+- **프로덕션**: https://swhealing.vercel.app
+- **API 엔드포인트**: https://swhealing.vercel.app/api/*
 
 ## 🛠️ 개발 환경 설정
 
 ### 필수 요구사항
 - Node.js 18+
-- Python 3.11+
-- SQLite (개발용)
-- Docker & Docker Compose
+- npm 또는 yarn
 
 ### 1. 저장소 클론
 ```bash
@@ -41,26 +40,7 @@ git clone <repository-url>
 cd suwon_healing
 ```
 
-### 2. 백엔드 설정
-```bash
-cd backend
-
-# 가상환경 생성
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 의존성 설치
-pip install -r requirements.txt
-
-# 환경변수 설정
-cp .env.example .env
-# .env 파일을 편집하여 데이터베이스 설정
-
-# 서버 실행
-uvicorn app.main:app --reload
-```
-
-### 3. 프론트엔드 설정
+### 2. 프론트엔드 설정
 ```bash
 cd frontend
 
@@ -71,125 +51,93 @@ npm install
 npm run dev
 ```
 
-### 4. Docker로 전체 실행
+### 3. 환경 변수 설정 (개발용)
 ```bash
-# 전체 서비스 실행
-docker-compose up -d
-
-# 로그 확인
-docker-compose logs -f
+# frontend/.env.local 파일 생성
+DATABASE_URL=libsql://swhealing-hozza.aws-ap-northeast-1.turso.io
+DATABASE_AUTH_TOKEN=your_turso_token_here
+SECRET_KEY=your_secret_key_here
 ```
 
-## 📊 데이터베이스 접근
+## 📊 데이터베이스
 
 ### 현재 상태
-- **데이터베이스**: SQLite (로컬 개발용)
-- **파일 위치**: `backend/suwon_healing.db`
+- **데이터베이스**: Turso (SQLite)
+- **위치**: AWS ap-northeast-1
 - **테이블**: 5개 (users, counselors, consultations, notices, reviews)
 
-### 데이터베이스 확인 방법
+### API 엔드포인트
 
-#### 1. 명령어로 확인 (추천)
+#### 헬스 체크
+```
+GET /api/health
+```
+
+#### 상담사 관리
+```
+GET /api/counselors     # 상담사 목록
+POST /api/counselors    # 상담사 등록
+```
+
+#### 상담 예약
+```
+GET /api/consultations  # 상담 목록
+POST /api/consultations # 상담 신청
+```
+
+#### 리뷰 관리
+```
+GET /api/reviews        # 리뷰 목록
+POST /api/reviews       # 리뷰 작성
+```
+
+#### 공지사항
+```
+GET /api/notices        # 공지사항 목록
+POST /api/notices       # 공지사항 등록
+```
+
+## 🚀 배포
+
+### Vercel 배포
+이 프로젝트는 Vercel에 자동 배포됩니다.
+
+1. **GitHub 연동**: main 브랜치에 푸시하면 자동 배포
+2. **환경 변수**: Vercel 대시보드에서 설정
+3. **도메인**: https://swhealing.vercel.app
+
+### 배포 가이드
+자세한 배포 방법은 `docs/vercel-deployment-guide.md`를 참조하세요.
+
+## 📚 문서
+
+- `docs/vercel-deployment-guide.md` - Vercel 배포 가이드
+- `docs/vercel-full-stack-deployment.md` - 전체 스택 배포 상세 가이드
+- `docs/database-design.md` - 데이터베이스 설계
+- `docs/api-development-guide.md` - API 개발 가이드
+
+## 🔧 개발 도구
+
+### 데이터베이스 확인 (백엔드 폴더)
 ```bash
 cd backend
 python check_db.py
 ```
 
-#### 2. GUI 웹 인터페이스
+### 샘플 데이터 삽입
 ```bash
 cd backend
-python db_gui.py
-# 브라우저에서 http://localhost:5000 접속
+python insert_sample_data.py
 ```
 
-#### 3. SQLite CLI
-```bash
-sqlite3 backend/suwon_healing.db
-.tables                    # 테이블 목록
-SELECT * FROM users;       # 데이터 조회
-.quit                      # 종료
-```
+## 📝 주요 기능
 
-**자세한 내용**: [데이터베이스 접근 가이드](docs/database-access.md)
-
-## 📚 주요 기능
-
-### 1. 소개 페이지
-- 상담센터 소개
-- 센터장 소개
-- 센터 위치 및 연락처
-
-### 2. 상담 신청
-- 온라인 상담 신청 폼
-- 상담 분야별 신청
-- 일정 선택 및 관리
-
-### 3. 상담 후기
-- 상담 완료 후 후기 작성
-- 별점 평가 시스템
-- 후기 검색 및 필터링
-
-### 4. 공지사항
-- 관리자 공지사항 관리
-- 공지사항 분류 및 검색
-- 중요도별 정렬
-
-### 5. 상담 조회
-- 온라인 상담사 조회
-- 회원 상담 내역 조회
-- 실시간 상담사 상태
-
-## 🔧 개발 가이드
-
-### API 문서
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### 데이터베이스 마이그레이션
-```bash
-# 새 마이그레이션 생성
-alembic revision --autogenerate -m "description"
-
-# 마이그레이션 적용
-alembic upgrade head
-
-# 마이그레이션 되돌리기
-alembic downgrade -1
-```
-
-### 테스트 실행
-```bash
-# 백엔드 테스트
-cd backend
-pytest
-
-# 프론트엔드 테스트
-cd frontend
-npm test
-```
-
-## 🚀 배포
-
-### 프로덕션 환경
-- **Frontend**: Vercel
-- **Backend**: Railway/Render
-- **Database**: PostgreSQL (Railway/Render 제공)
-
-### 환경변수 설정
-프로덕션 환경에서 필요한 환경변수:
-- `DATABASE_URL`: PostgreSQL 연결 문자열
-- `SECRET_KEY`: JWT 시크릿 키
-- `CORS_ORIGINS`: 허용된 프론트엔드 도메인
-- `EMAIL_HOST`: 이메일 서버 설정
-- `AWS_ACCESS_KEY_ID`: S3 파일 저장소 (선택적)
-
-## 📝 문서
-
-- [요구사항 정의서](docs/requirements.md)
-- [프로젝트 구조](docs/project-structure.md)
-- [데이터베이스 접근 가이드](docs/database-access.md)
-- [API 문서](docs/api-documentation.md)
-- [배포 가이드](docs/deployment-guide.md)
+- ✅ 상담사 소개 및 예약
+- ✅ 상담 신청 및 관리
+- ✅ 리뷰 시스템
+- ✅ 공지사항 관리
+- ✅ 반응형 디자인
+- ✅ SEO 최적화
 
 ## 🤝 기여하기
 
@@ -201,13 +149,9 @@ npm test
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
 
-## 📞 연락처
+## 📞 문의
 
-프로젝트 관련 문의사항이 있으시면 이슈를 생성해주세요.
-
----
-
-**수원 힐링 상담센터** - 고객의 마음을 치유하는 온라인 공간 🌟
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
 
