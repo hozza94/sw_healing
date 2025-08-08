@@ -1,36 +1,33 @@
 # FastAPI 및 웹 프레임워크
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
 
 # 데이터베이스
-sqlalchemy==2.0.23
-alembic==1.12.1
-libsql-client==0.3.1
+sqlalchemy>=2.0.23
+alembic>=1.12.1
+libsql-client>=0.3.1
 
 # 인증 및 보안
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-decouple==3.8
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-decouple>=3.8
 
 # 이메일
-emails==0.6.0
-jinja2==3.1.2
-email-validator==2.1.0
+emails>=0.6.0
+jinja2>=3.1.2
+email-validator>=2.1.0
 
 # 유틸리티
-pydantic==2.5.0
-pydantic-settings==2.1.0
-python-dotenv==1.0.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
 
 # HTTP 클라이언트
-httpx==0.25.2
+httpx>=0.25.2
 
 # 파일 업로드
-Pillow==10.1.0
+Pillow>=10.1.0
 
-# CORS
-fastapi-cors==0.0.6
-
-# 추가 의존성
-email-validator==2.1.0 
+# CORS (FastAPI에 내장되어 있으므로 제거)
+# fastapi-cors>=0.0.6 
