@@ -90,14 +90,21 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
     setIsSubmitting(true);
     
     try {
+      // 날짜와 시간을 조합하여 scheduled_at 생성
+      const scheduledAt = formData.preferred_date && formData.preferred_time 
+        ? `${formData.preferred_date}T${formData.preferred_time}:00`
+        : new Date().toISOString();
+      
       // ConsultationFormData를 CreateConsultationRequest로 변환
       const consultationData: CreateConsultationRequest = {
         counselor_id: formData.counselor_id,
         consultation_type: formData.consultation_type,
         urgency_level: formData.urgency_level,
         description: formData.description,
-        scheduled_at: formData.scheduled_at
+        scheduled_at: scheduledAt
       };
+      
+      console.log('전송할 데이터:', consultationData);
       
       const result = await createConsultation(consultationData);
       if (result) {
@@ -107,6 +114,7 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
         alert('상담 신청에 실패했습니다. 다시 시도해주세요.');
       }
     } catch (error) {
+      console.error('상담 신청 오류:', error);
       alert('상담 신청 중 오류가 발생했습니다.');
     } finally {
       setIsSubmitting(false);
