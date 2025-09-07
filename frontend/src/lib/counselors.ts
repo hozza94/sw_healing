@@ -24,26 +24,38 @@ export interface CounselorResponse {
 export interface Counselor {
   id: string;
   name: string;
-  specialization: string;
-  experience_years: number;
-  education: string;
-  description: string;
-  image_url?: string;
+  email: string;
+  phone?: string;
+  specialization?: string;
+  experience?: string;
+  education?: string;
+  certification?: string;
+  bio?: string;
+  profile_image?: string;
+  is_online: boolean;
+  is_active: boolean;
+  rating: number;
+  total_reviews: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateCounselorRequest {
   name: string;
-  specialization: string;
-  experience_years: number;
-  education: string;
-  description: string;
-  image_url?: string;
+  email: string;
+  phone?: string;
+  specialization?: string;
+  education?: string;
+  experience?: string;
+  certification?: string;
+  bio?: string;
+  profile_image?: string;
 }
 
 export interface UpdateCounselorRequest extends Partial<CreateCounselorRequest> {
   id: string;
+  is_online?: boolean;
+  is_active?: boolean;
 }
 
 // 백엔드 데이터를 프론트엔드 구조로 변환
@@ -54,11 +66,18 @@ function mapCounselorResponse(response: CounselorResponse): Counselor {
   return {
     id: response.id.toString(),
     name: response.name,
+    email: response.email,
+    phone: response.phone,
     specialization: response.specialization,
-    experience_years: experienceYears,
+    experience: response.experience,
     education: response.education,
-    description: response.bio,
-    image_url: response.profile_image || undefined,
+    certification: response.certification,
+    bio: response.bio,
+    profile_image: response.profile_image || undefined,
+    is_online: response.is_online,
+    is_active: response.is_active,
+    rating: response.rating,
+    total_reviews: response.total_reviews,
     created_at: response.created_at,
     updated_at: response.updated_at || response.created_at
   };
@@ -67,19 +86,37 @@ function mapCounselorResponse(response: CounselorResponse): Counselor {
 // 모든 상담사 목록 가져오기 (관리자용)
 export async function getCounselors(): Promise<{counselors: Counselor[], total: number, page: number, size: number} | null> {
   try {
-    const response = await apiClient.get<{counselors: CounselorResponse[], count: number}>(API_ENDPOINTS.COUNSELORS);
+    console.log('getCounselors 호출 시작'); // 디버깅 로그
+    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
+    console.log('getCounselors API 응답 전체:', response); // 디버깅 로그
+    console.log('getCounselors response.data:', response.data); // 디버깅 로그
     
-    if (response.data) {
+    // 백엔드 응답 구조: {data: [...], message: 'Success'}
+    if (response.data && Array.isArray(response.data)) {
+      console.log('getCounselors 성공 - 직접 배열 응답:', response.data); // 디버깅 로그
       return {
-        counselors: response.data.counselors.map(mapCounselorResponse),
-        total: response.data.count,
+        counselors: response.data.map(mapCounselorResponse),
+        total: response.data.length,
         page: 1,
-        size: response.data.count
+        size: response.data.length
       };
     }
+    
+    // 기존 구조: {data: {counselors: [...], total: 5, page: 1, size: 10}}
+    if (response.data && response.data.counselors) {
+      console.log('getCounselors 성공 - counselors 키 응답:', response.data.counselors); // 디버깅 로그
+      return {
+        counselors: response.data.counselors.map(mapCounselorResponse),
+        total: response.data.total,
+        page: response.data.page,
+        size: response.data.size
+      };
+    }
+    
+    console.log('getCounselors 실패 - 지원되지 않는 응답 구조'); // 디버깅 로그
     return null;
   } catch (error) {
-    console.error('상담사 목록을 가져오는데 실패했습니다:', error);
+    console.error('getCounselors 에러 발생:', error); // 디버깅 로그
     return null;
   }
 }
@@ -87,7 +124,7 @@ export async function getCounselors(): Promise<{counselors: Counselor[], total: 
 // 승인된 상담사 목록 가져오기 (일반 사용자용)
 export async function getApprovedCounselors(): Promise<Counselor[]> {
   try {
-    const response = await apiClient.get<{counselors: CounselorResponse[], count: number}>(API_ENDPOINTS.COUNSELORS);
+    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
     
     // 백엔드 응답 구조에서 counselors 배열을 추출하고 매핑
     const counselors = response.data?.counselors || [];
@@ -139,5 +176,39 @@ export async function deleteCounselor(id: string): Promise<boolean> {
   } catch (error) {
     console.error('상담사 삭제에 실패했습니다:', error);
     return false;
+  }
+}
+
+// 상담사 상태 토글 (활성/비활성)
+export async function toggleCounselorStatus(id: string): Promise<boolean> {
+  try {
+    const response = await apiClient.patch(API_ENDPOINTS.COUNSELOR_TOGGLE_STATUS(id));
+    return response.data !== undefined;
+  } catch (error) {
+    console.error('상담사 상태 변경에 실패했습니다:', error);
+    return false;
+  }
+}
+
+// 프로필 이미지 업로드
+export async function uploadProfileImage(file: File): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : ''}/api${API_ENDPOINTS.COUNSELOR_UPLOAD_IMAGE}`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.image_url;
+  } catch (error) {
+    console.error('이미지 업로드에 실패했습니다:', error);
+    return null;
   }
 }

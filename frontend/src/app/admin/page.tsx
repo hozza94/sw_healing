@@ -11,7 +11,9 @@ import { getReviews } from '@/lib/reviews';
 import { getNotices } from '@/lib/notices';
 import { getConsultations } from '@/lib/consultations';
 import CounselorForm from '@/components/forms/CounselorForm';
-import { deleteCounselor } from '@/lib/counselors';
+import { deleteCounselor, updateCounselor, toggleCounselorStatus } from '@/lib/counselors';
+import { ConsultationDetailModal } from '@/components/ui/consultation-detail-modal';
+import { Eye, Calendar, Clock, User, MapPin } from 'lucide-react';
 
 interface DashboardStats {
   counselors: number;
@@ -37,7 +39,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       
-      // 각 데이터 타입별로 개수 조회
+      // 임시로 기존 API 사용 (백엔드 서버 재시작 후 새로운 API로 변경)
       const [counselorsRes, consultationsRes, reviewsRes, noticesRes] = await Promise.all([
         getCounselors(),
         getConsultations(),
@@ -45,9 +47,16 @@ export default function AdminDashboard() {
         getNotices()
       ]);
 
+      console.log('대시보드 데이터 로딩 결과:', {
+        counselors: counselorsRes,
+        consultations: consultationsRes,
+        reviews: reviewsRes,
+        notices: noticesRes
+      }); // 디버깅 로그
+
       setStats({
         counselors: counselorsRes?.total || 0,
-        consultations: consultationsRes?.total || 0,
+        consultations: consultationsRes?.total || (consultationsRes?.consultations?.length || 0), // total이 없으면 배열 길이 사용
         reviews: reviewsRes?.total || 0,
         notices: noticesRes?.total || 0
       });
@@ -183,6 +192,9 @@ function CounselorsTab() {
     try {
       setLoading(true);
       const response = await getCounselors();
+      console.log('상담사 API 응답:', response); // 디버깅 로그
+      console.log('상담사 배열:', response?.counselors); // 디버깅 로그
+      // getCounselors는 {counselors: [...], total: 5, page: 1, size: 10} 형태로 반환
       setCounselors(response?.counselors || []);
     } catch (error) {
       console.error('상담사 데이터 로딩 실패:', error);
@@ -205,6 +217,27 @@ function CounselorsTab() {
         console.error('상담사 삭제 실패:', error);
         alert('상담사 삭제에 실패했습니다.');
       }
+    }
+  };
+
+  const handleToggleActive = async (counselorId: string, currentStatus: boolean) => {
+    try {
+      const statusText = currentStatus ? '비활성화' : '활성화';
+      
+      if (confirm(`정말로 이 상담사를 ${statusText}하시겠습니까?`)) {
+        // 새로운 toggleCounselorStatus API 사용
+        const success = await toggleCounselorStatus(counselorId);
+        
+        if (success) {
+          alert(`상담사가 ${statusText}되었습니다.`);
+          fetchCounselors(); // 목록 새로고침
+        } else {
+          alert(`${statusText}에 실패했습니다.`);
+        }
+      }
+    } catch (error) {
+      console.error('상담사 상태 변경 실패:', error);
+      alert('상담사 상태 변경에 실패했습니다.');
     }
   };
 
@@ -249,15 +282,23 @@ function CounselorsTab() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleDeleteCounselor(counselor.id)}
+                      className={`${
+                        counselor.is_active 
+                          ? 'text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700' 
+                          : 'text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700'
+                      }`}
+                      onClick={() => handleToggleActive(counselor.id, counselor.is_active)}
                     >
-                      삭제
+                      {counselor.is_active ? '비활성화' : '활성화'}
                     </Button>
                   </div>
                   <div className="text-right">
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                      활성
+                    <Badge 
+                      variant={counselor.is_active ? "default" : "secondary"}
+                      onClick={() => handleToggleActive(counselor.id, counselor.is_active)}
+                      className="cursor-pointer hover:bg-blue-500 transition-colors"
+                    >
+                      {counselor.is_active ? '활성' : '비활성'}
                     </Badge>
                   </div>
                 </div>
@@ -274,6 +315,8 @@ function CounselorsTab() {
 function ConsultationsTab() {
   const [consultations, setConsultations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedConsultation, setSelectedConsultation] = useState<any | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchConsultations();
@@ -283,12 +326,61 @@ function ConsultationsTab() {
     try {
       setLoading(true);
       const response = await getConsultations();
+      console.log('상담신청 API 응답:', response); // 디버깅 로그
+      console.log('상담신청 배열:', response?.consultations); // 디버깅 로그
+      // getConsultations는 {consultations: [...], total: 5, page: 1, size: 10} 형태로 반환
       setConsultations(response?.consultations || []);
     } catch (error) {
       console.error('상담 신청 데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConsultationClick = (consultation: any) => {
+    setSelectedConsultation(consultation);
+    setDetailModalOpen(true);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return '대기중';
+      case 'confirmed':
+        return '확정됨';
+      case 'cancelled':
+        return '취소됨';
+      case 'completed':
+        return '완료됨';
+      default:
+        return status;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR');
+  };
+
+  const formatTime = (timeString: string) => {
+    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (loading) {
@@ -299,28 +391,116 @@ function ConsultationsTab() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">상담 신청 목록</h2>
+        <Button 
+          variant="outline" 
+          onClick={() => window.open('/admin/consultations', '_blank')}
+        >
+          전체 보기
+        </Button>
       </div>
       
       <div className="grid gap-4">
-        {consultations.map((consultation) => (
-          <Card key={consultation.id}>
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold">상담 신청 #{consultation.id}</h3>
-                  <p className="text-gray-600">{consultation.consultation_type}</p>
-                  <p className="text-sm text-gray-500">{consultation.scheduled_at}</p>
-                </div>
-                <div className="text-right">
-                  <Badge variant={consultation.status === 'PENDING' ? 'secondary' : 'default'}>
-                    {consultation.status === 'PENDING' ? '대기중' : '확정'}
-                  </Badge>
-                </div>
-              </div>
+        {consultations.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-gray-500">상담 신청 내역이 없습니다.</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          consultations.map((consultation) => (
+            <Card 
+              key={consultation.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500"
+              onClick={() => handleConsultationClick(consultation)}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Badge className={getStatusColor(consultation.status)}>
+                        {getStatusText(consultation.status)}
+                      </Badge>
+                      <span className="text-sm text-gray-500">#{consultation.id}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">신청자</p>
+                          <p className="font-medium">{consultation.user_name || '알 수 없음'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">상담사</p>
+                          <p className="font-medium">{consultation.counselor_name || '알 수 없음'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">상담 유형</p>
+                          <p className="font-medium">{consultation.consultation_type}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">상담 날짜</p>
+                          <p className="font-medium">{formatDate(consultation.consultation_date)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">상담 시간</p>
+                          <p className="font-medium">{formatTime(consultation.consultation_time)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleConsultationClick(consultation);
+                    }}
+                    className="flex items-center space-x-2 ml-4"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>상세보기</span>
+                  </Button>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-500">
+                      신청일: {formatDate(consultation.created_at)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      클릭하여 상세 정보 확인
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
+
+      {/* 상세 정보 모달 */}
+      <ConsultationDetailModal
+        consultation={selectedConsultation}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </div>
   );
 }
@@ -338,6 +518,7 @@ function ReviewsTab() {
     try {
       setLoading(true);
       const response = await getReviews();
+      // getReviews는 {reviews: [...], total: 5, page: 1, size: 10} 형태로 반환
       setReviews(response?.reviews || []);
     } catch (error) {
       console.error('후기 데이터 로딩 실패:', error);
@@ -396,6 +577,7 @@ function NoticesTab() {
     try {
       setLoading(true);
       const response = await getNotices();
+      // getNotices는 {notices: [...], total: 5, page: 1, size: 10} 형태로 반환
       setNotices(response?.notices || []);
     } catch (error) {
       console.error('공지사항 데이터 로딩 실패:', error);
