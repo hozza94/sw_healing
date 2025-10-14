@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@libsql/client": "^0.15.10"
+    "@libsql/client": "^0.15.15"
   }
 }
