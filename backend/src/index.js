@@ -26,10 +26,28 @@ import {
   measurePerformance
 } from './logger.js';
 
+import { 
+  initCache, 
+  getCache,
+  generateCacheKey,
+  CACHE_TTL,
+  cacheCounselors,
+  getCachedCounselors,
+  cacheNotices,
+  getCachedNotices,
+  cacheReviews,
+  getCachedReviews,
+  getCacheStatus
+} from './cache.js';
+
 export default {
   async fetch(request, env, ctx) {
     // 로거 초기화
     const logger = initLogger(env);
+    
+    // 캐시 초기화
+    const cache = initCache(env.CACHE);
+    
     const startTime = Date.now();
     
     // CORS 헤더 설정
@@ -88,6 +106,10 @@ export default {
         response = handleAPIDocs(request, corsHeaders);
       } else if (path === '/api/metrics') {
         response = handleMetrics(request, corsHeaders);
+      } else if (path === '/api/cache/status') {
+        response = handleCacheStatus(request, corsHeaders);
+      } else if (path === '/api/cache/clear') {
+        response = await handleCacheClear(request, corsHeaders);
       } else {
         response = new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
@@ -127,9 +149,23 @@ function handleHealth(request, corsHeaders) {
 // 상담사 목록
 async function handleCounselors(request, env, corsHeaders) {
   const logger = getLogger();
+  const cache = getCache();
   const startTime = Date.now();
   
   try {
+    // 캐시에서 조회 시도
+    const cachedCounselors = await getCachedCounselors(cache);
+    if (cachedCounselors) {
+      const responseTime = Date.now() - startTime;
+      logger.info('Counselors served from cache', {
+        count: cachedCounselors.counselors.length,
+        responseTime: `${responseTime}ms`,
+        source: 'cache'
+      });
+      
+      return createSuccessResponse(cachedCounselors, HTTP_STATUS.OK, corsHeaders);
+    }
+
     logger.debug('Fetching counselors from database', {
       hasDatabaseUrl: !!env.DATABASE_URL,
       hasAuthToken: !!env.DATABASE_AUTH_TOKEN
@@ -190,21 +226,28 @@ async function handleCounselors(request, env, corsHeaders) {
       return counselor;
     });
 
-    logDatabase('SELECT', query, true, responseTime, {
-      rowCount: counselors.length
-    });
-    
-    logger.info('Successfully fetched counselors', {
-      count: counselors.length,
-      responseTime: `${responseTime}ms`
-    });
-    
-    return createSuccessResponse({
+    const responseData = {
       counselors: counselors,
       total: counselors.length,
       page: 1,
       size: counselors.length
-    }, HTTP_STATUS.OK, corsHeaders);
+    };
+
+    // 캐시에 저장
+    await cacheCounselors(cache, responseData);
+
+    logDatabase('SELECT', query, true, responseTime, {
+      rowCount: counselors.length
+    });
+    
+    logger.info('Successfully fetched counselors from database', {
+      count: counselors.length,
+      responseTime: `${responseTime}ms`,
+      source: 'database',
+      cached: true
+    });
+    
+    return createSuccessResponse(responseData, HTTP_STATUS.OK, corsHeaders);
     
   } catch (error) {
     const responseTime = Date.now() - startTime;
@@ -670,13 +713,16 @@ async function handleAPIDocs(request, corsHeaders) {
 // 메트릭 조회
 function handleMetrics(request, corsHeaders) {
   const logger = getLogger();
+  const cache = getCache();
   
   try {
     const metrics = logger.getMetrics();
+    const cacheStatus = getCacheStatus(cache);
     
     logger.debug('Metrics requested', { 
       requestCount: metrics.requests,
-      errorCount: metrics.errors 
+      errorCount: metrics.errors,
+      cacheAvailable: cacheStatus.available
     });
     
     return createSuccessResponse({
@@ -685,11 +731,64 @@ function handleMetrics(request, corsHeaders) {
         uptime: 'N/A', // Cloudflare Workers에서는 process.uptime() 사용 불가
         memory: 'N/A'  // Cloudflare Workers에서는 process.memoryUsage() 사용 불가
       },
+      cache: cacheStatus,
       timestamp: new Date().toISOString()
     }, HTTP_STATUS.OK, corsHeaders);
     
   } catch (error) {
     logger.error('Failed to get metrics', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 캐시 상태 조회
+function handleCacheStatus(request, corsHeaders) {
+  const logger = getLogger();
+  const cache = getCache();
+  
+  try {
+    const cacheStatus = getCacheStatus(cache);
+    
+    logger.debug('Cache status requested', { 
+      available: cacheStatus.available,
+      memorySize: cacheStatus.memory?.size || 0
+    });
+    
+    return createSuccessResponse({
+      cache: cacheStatus,
+      timestamp: new Date().toISOString()
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    logger.error('Failed to get cache status', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 캐시 초기화
+async function handleCacheClear(request, corsHeaders) {
+  const logger = getLogger();
+  const cache = getCache();
+  
+  try {
+    if (!cache) {
+      return createErrorResponse(
+        new Error('Cache not available'), 
+        corsHeaders
+      );
+    }
+
+    await cache.clear();
+    
+    logger.info('Cache cleared successfully');
+    
+    return createSuccessResponse({
+      message: 'Cache cleared successfully',
+      timestamp: new Date().toISOString()
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    logger.error('Failed to clear cache', { error: error.message });
     return createErrorResponse(error, corsHeaders);
   }
 }

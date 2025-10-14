@@ -6,6 +6,12 @@ compatibility_date = "2025-10-14"
 [assets]
 directory = "."
 
+# Cloudflare KV 네임스페이스
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
 [env.development]
 name = "dev-sw-healing-api"
 

@@ -24,6 +24,12 @@
 - 모니터링
 - 디버깅 가이드
 
+### 🚀 [캐싱 시스템](CACHING_SYSTEM.md)
+- 다층 캐싱 (메모리 + KV)
+- 성능 최적화
+- 캐시 관리
+- 모니터링
+
 ## 🚀 빠른 시작
 
 ### 1. API 테스트
@@ -36,6 +42,12 @@ curl https://sw-healing-api.hozza94.workers.dev/api/counselors
 
 # 메트릭 조회
 curl https://sw-healing-api.hozza94.workers.dev/api/metrics
+
+# 캐시 상태 확인
+curl https://sw-healing-api.hozza94.workers.dev/api/cache/status
+
+# 캐시 초기화
+curl -X POST https://sw-healing-api.hozza94.workers.dev/api/cache/clear
 ```
 
 ### 2. API 문서 확인
