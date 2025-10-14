@@ -23,13 +23,21 @@
 
 ```
 sw_healing/
-├── docs/              # 문서
+├── docs/              # 프로젝트 문서
 ├── backend/           # 백엔드 (Cloudflare Workers)
 │   ├── src/           # Workers 소스 코드
-│   │   └── index.js   # Workers JavaScript
+│   │   ├── index.js   # 메인 Workers 파일
+│   │   ├── errors.js  # 에러 처리 시스템
+│   │   └── logger.js  # 로깅 시스템
+│   ├── docs/          # 백엔드 API 문서
+│   │   ├── README.md  # 문서 목록
+│   │   ├── API_DOCUMENTATION.md
+│   │   ├── ERROR_HANDLING.md
+│   │   └── LOGGING_SYSTEM.md
 │   ├── fastapi-legacy/# FastAPI 레거시 코드 (참고용)
 │   │   └── app/       # 기존 FastAPI 구조
-│   └── wrangler.toml  # Workers 설정
+│   ├── wrangler.toml  # Workers 설정
+│   └── README.md      # 백엔드 가이드
 ├── frontend/          # Next.js 프론트엔드
 │   ├── src/           # 소스 코드
 │   └── next.config.js # Next.js 설정
@@ -114,6 +122,7 @@ node setup_turso_db.js
 - **Base URL**: https://sw-healing-api.hozza94.workers.dev
 - **API 문서**: https://sw-healing-api.hozza94.workers.dev/docs
 - **OpenAPI 스펙**: https://sw-healing-api.hozza94.workers.dev/openapi.json
+- **백엔드 문서**: [backend/docs/](backend/docs/)
 
 #### 헬스 체크
 ```
