@@ -112,6 +112,8 @@ node setup_turso_db.js
 
 ### 백엔드 API (Cloudflare Workers)
 - **Base URL**: https://sw-healing-api.hozza94.workers.dev
+- **API 문서**: https://sw-healing-api.hozza94.workers.dev/docs
+- **OpenAPI 스펙**: https://sw-healing-api.hozza94.workers.dev/openapi.json
 
 #### 헬스 체크
 ```

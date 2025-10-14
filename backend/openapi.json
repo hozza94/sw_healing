@@ -1,0 +1,687 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "수원 힐링 상담센터 API",
+    "description": "수원 힐링 상담센터의 상담사, 상담 신청, 리뷰, 공지사항을 관리하는 API",
+    "version": "1.0.0",
+    "contact": {
+      "name": "수원 힐링 상담센터",
+      "email": "info@suwon-healing.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://sw-healing-api.hozza94.workers.dev",
+      "description": "프로덕션 서버"
+    },
+    {
+      "url": "https://dev-sw-healing-api.workers.dev",
+      "description": "개발 서버"
+    },
+    {
+      "url": "http://localhost:8787",
+      "description": "로컬 개발 서버"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "헬스 체크",
+        "description": "API 서버의 상태를 확인합니다.",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "서버가 정상 작동 중",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "수원 힐링 상담센터 API"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2025-01-14T05:19:06.840Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/counselors": {
+      "get": {
+        "summary": "상담사 목록 조회",
+        "description": "활성화된 상담사들의 목록을 조회합니다.",
+        "tags": ["Counselors"],
+        "responses": {
+          "200": {
+            "description": "상담사 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "counselors": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Counselor"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "page": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "size": {
+                      "type": "integer",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/counselors/{id}": {
+      "get": {
+        "summary": "특정 상담사 조회",
+        "description": "ID로 특정 상담사의 상세 정보를 조회합니다.",
+        "tags": ["Counselors"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "상담사 ID",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "상담사 정보 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Counselor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "상담사를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notices": {
+      "get": {
+        "summary": "공지사항 목록 조회",
+        "description": "발행된 공지사항들의 목록을 조회합니다.",
+        "tags": ["Notices"],
+        "responses": {
+          "200": {
+            "description": "공지사항 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notices": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Notice"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 9
+                    },
+                    "page": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "size": {
+                      "type": "integer",
+                      "example": 9
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notices/{id}": {
+      "get": {
+        "summary": "특정 공지사항 조회",
+        "description": "ID로 특정 공지사항의 상세 정보를 조회합니다.",
+        "tags": ["Notices"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "공지사항 ID",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "공지사항 정보 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "공지사항을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "get": {
+        "summary": "리뷰 목록 조회",
+        "description": "승인된 리뷰들의 목록을 조회합니다.",
+        "tags": ["Reviews"],
+        "responses": {
+          "200": {
+            "description": "리뷰 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Review"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 9
+                    },
+                    "page": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "size": {
+                      "type": "integer",
+                      "example": 9
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "get": {
+        "summary": "특정 리뷰 조회",
+        "description": "ID로 특정 리뷰의 상세 정보를 조회합니다.",
+        "tags": ["Reviews"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "리뷰 ID",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "리뷰 정보 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Review"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "리뷰를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/consultations": {
+      "get": {
+        "summary": "상담 목록 조회",
+        "description": "상담 신청 목록을 조회합니다.",
+        "tags": ["Consultations"],
+        "responses": {
+          "200": {
+            "description": "상담 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "consultations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Consultation"
+                      }
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "상담 신청",
+        "description": "새로운 상담을 신청합니다.",
+        "tags": ["Consultations"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "상담 신청 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "example": 1234567890
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "상담 신청이 완료되었습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Counselor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "1"
+          },
+          "name": {
+            "type": "string",
+            "example": "김상담"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "counselor1@suwon-healing.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "010-1000-1000"
+          },
+          "specialization": {
+            "type": "string",
+            "example": "개인상담"
+          },
+          "education": {
+            "type": "string",
+            "example": "서울대학교 심리학과 졸업"
+          },
+          "experience": {
+            "type": "string",
+            "example": "10년"
+          },
+          "bio": {
+            "type": "string",
+            "example": "따뜻하고 전문적인 상담을 제공합니다."
+          },
+          "profile_image": {
+            "type": "string",
+            "nullable": true,
+            "example": "/images/counselor1.jpg"
+          },
+          "is_online": {
+            "type": "string",
+            "example": "1"
+          },
+          "is_active": {
+            "type": "string",
+            "example": "1"
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "example": 4.8
+          },
+          "total_reviews": {
+            "type": "string",
+            "example": "25"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-08-08 06:45:12"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        }
+      },
+      "Notice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "1"
+          },
+          "title": {
+            "type": "string",
+            "example": "수원 힐링 상담센터 오픈 안내"
+          },
+          "content": {
+            "type": "string",
+            "example": "수원 힐링 상담센터가 정식으로 오픈했습니다."
+          },
+          "notice_type": {
+            "type": "string",
+            "enum": ["general", "important", "event", "maintenance"],
+            "example": "important"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived"],
+            "example": "published"
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "example": true
+          },
+          "view_count": {
+            "type": "integer",
+            "example": 150
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "example": "2024-01-01T00:00:00Z"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "1"
+          },
+          "user_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "counselor_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          },
+          "title": {
+            "type": "string",
+            "example": "정말 도움이 되었습니다"
+          },
+          "content": {
+            "type": "string",
+            "example": "김상담 선생님의 따뜻한 상담 덕분에 마음이 한결 편해졌습니다."
+          },
+          "is_anonymous": {
+            "type": "boolean",
+            "example": false
+          },
+          "is_approved": {
+            "type": "boolean",
+            "example": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          },
+          "view_count": {
+            "type": "integer",
+            "example": 10
+          },
+          "author_name": {
+            "type": "string",
+            "example": "김철수"
+          },
+          "counselor_name": {
+            "type": "string",
+            "example": "김상담"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "example": "2024-01-01T00:00:00Z"
+          }
+        }
+      },
+      "Consultation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "1"
+          },
+          "user_name": {
+            "type": "string",
+            "example": "김철수"
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "example": "kim@example.com"
+          },
+          "user_phone": {
+            "type": "string",
+            "example": "010-1111-1111"
+          },
+          "counselor_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "consultation_type": {
+            "type": "string",
+            "example": "개인상담"
+          },
+          "preferred_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "preferred_time": {
+            "type": "string",
+            "example": "14:00"
+          },
+          "message": {
+            "type": "string",
+            "example": "스트레스 관리에 대해 상담받고 싶습니다."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "completed", "cancelled"],
+            "example": "pending"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "nullable": true,
+            "example": "2024-01-01T00:00:00Z"
+          }
+        }
+      },
+      "ConsultationRequest": {
+        "type": "object",
+        "required": ["user_name", "user_email", "user_phone", "consultation_type"],
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "example": "김철수"
+          },
+          "user_email": {
+            "type": "string",
+            "format": "email",
+            "example": "kim@example.com"
+          },
+          "user_phone": {
+            "type": "string",
+            "example": "010-1111-1111"
+          },
+          "counselor_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "consultation_type": {
+            "type": "string",
+            "example": "개인상담"
+          },
+          "preferred_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "preferred_time": {
+            "type": "string",
+            "example": "14:00"
+          },
+          "message": {
+            "type": "string",
+            "example": "스트레스 관리에 대해 상담받고 싶습니다."
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          },
+          "message": {
+            "type": "string",
+            "example": "요청한 리소스를 찾을 수 없습니다."
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "서버 상태 확인"
+    },
+    {
+      "name": "Counselors",
+      "description": "상담사 관리"
+    },
+    {
+      "name": "Notices",
+      "description": "공지사항 관리"
+    },
+    {
+      "name": "Reviews",
+      "description": "리뷰 관리"
+    },
+    {
+      "name": "Consultations",
+      "description": "상담 신청 관리"
+    }
+  ]
+}

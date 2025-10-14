@@ -2,6 +2,10 @@ name = "sw-healing-api"
 main = "src/index.js"
 compatibility_date = "2025-10-14"
 
+# OpenAPI 스펙 파일 포함
+[assets]
+directory = "."
+
 [env.development]
 name = "dev-sw-healing-api"
 

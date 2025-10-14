@@ -44,6 +44,10 @@ export default {
         return await handleReviewById(request, env, corsHeaders, id);
       } else if (path === '/api/consultations') {
         return await handleConsultations(request, env, corsHeaders);
+      } else if (path === '/openapi.json') {
+        return handleOpenAPI(request, corsHeaders);
+      } else if (path === '/docs' || path === '/api-docs') {
+        return handleAPIDocs(request, corsHeaders);
       } else {
         return new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
@@ -477,4 +481,95 @@ async function handleConsultations(request, env, corsHeaders) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
+}
+
+// OpenAPI 스펙 제공
+async function handleOpenAPI(request, corsHeaders) {
+  try {
+    // OpenAPI 스펙 파일 읽기
+    const openAPISpec = await import('./openapi.json', { assert: { type: 'json' } });
+    
+    return new Response(JSON.stringify(openAPISpec.default), {
+      status: 200,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=3600', // 1시간 캐시
+        ...corsHeaders 
+      },
+    });
+  } catch (error) {
+    console.error('OpenAPI Error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to load OpenAPI spec',
+      message: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+}
+
+// API 문서 페이지 제공
+async function handleAPIDocs(request, corsHeaders) {
+  const html = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수원 힐링 상담센터 API 문서</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin:0;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: '/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                validatorUrl: null,
+                tryItOutEnabled: true,
+                supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+                onComplete: function() {
+                    console.log('API 문서가 로드되었습니다.');
+                }
+            });
+        };
+    </script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: { 
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      ...corsHeaders 
+    },
+  });
 }
