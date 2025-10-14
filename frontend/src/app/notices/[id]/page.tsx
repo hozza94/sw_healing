@@ -8,6 +8,12 @@ import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getNotice, Notice } from "@/lib/notices"
 
+// 정적 빌드를 위한 generateStaticParams
+export async function generateStaticParams() {
+  // 빈 배열을 반환하여 동적 라우트를 정적 빌드에서 제외
+  return []
+}
+
 export default function NoticeDetailPage() {
   const params = useParams();
   const router = useRouter();
