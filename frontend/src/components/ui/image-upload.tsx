@@ -58,7 +58,7 @@ export function ImageUpload({ onImageUpload, currentImageUrl, className = '' }: 
       }
 
       const data = await response.json();
-      onImageUpload(data.image_url);
+      onImageUpload(data.profile_image);
     } catch (error) {
       console.error('이미지 업로드 오류:', error);
       alert('이미지 업로드에 실패했습니다.');

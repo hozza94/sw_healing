@@ -84,7 +84,7 @@ export default function CounselorSelector({ onSelect, selectedCounselorId, onNex
                 <p className="text-blue-700 font-semibold text-lg mb-3">{selectedCounselor.specialization} 전문</p>
                 <div className="flex items-center space-x-3 mb-3">
                   <Badge variant="secondary" className="bg-green-100 text-green-800 font-semibold">
-                    경력 {selectedCounselor.experience_years}년
+                    경력 {selectedCounselor.experience}
                   </Badge>
                   <div className="flex items-center space-x-1">
                     <span className="text-yellow-500 text-lg">⭐</span>
@@ -126,7 +126,7 @@ export default function CounselorSelector({ onSelect, selectedCounselorId, onNex
                     <p className="text-blue-600 font-semibold mb-3">{counselor.specialization} 전문</p>
                     <div className="flex items-center space-x-3 mb-3">
                       <Badge variant="secondary" className="bg-green-100 text-green-800 font-medium">
-                        경력 {counselor.experience_years}년
+                        경력 {counselor.experience}
                       </Badge>
                       <div className="flex items-center space-x-1">
                         <span className="text-yellow-500 text-lg">⭐</span>

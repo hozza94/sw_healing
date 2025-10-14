@@ -206,7 +206,7 @@ export async function uploadProfileImage(file: File): Promise<string | null> {
     }
     
     const data = await response.json();
-    return data.image_url;
+    return data.profile_image;
   } catch (error) {
     console.error('이미지 업로드에 실패했습니다:', error);
     return null;

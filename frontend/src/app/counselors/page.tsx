@@ -124,7 +124,7 @@ export default function CounselorsPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">경력</h4>
-                      <p className="text-gray-600">{counselor.experience_years}년</p>
+                      <p className="text-gray-600">{counselor.experience}</p>
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">학력</h4>

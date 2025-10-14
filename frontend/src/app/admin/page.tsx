@@ -260,7 +260,7 @@ function CounselorsTab() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{counselor.name}</h3>
                   <p className="text-gray-600">{counselor.specialization}</p>
-                  <p className="text-sm text-gray-500">경력: {counselor.experience_years}년</p>
+                  <p className="text-sm text-gray-500">경력: {counselor.experience}</p>
                   <p className="text-sm text-gray-500">{counselor.education}</p>
                   {counselor.description && (
                     <p className="text-sm text-gray-600 mt-2 line-clamp-2">

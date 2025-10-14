@@ -191,7 +191,7 @@ export default function CounselorForm({ counselor, onSuccess, trigger }: Counsel
           </div>
 
           <div>
-            <Label htmlFor="image_url" className="text-gray-700 font-medium">프로필 이미지</Label>
+            <Label htmlFor="profile_image" className="text-gray-700 font-medium">프로필 이미지</Label>
             <ImageUpload
               onImageUpload={(url) => handleInputChange('profile_image', url)}
               currentImageUrl={formData.profile_image}
