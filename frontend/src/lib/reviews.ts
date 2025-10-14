@@ -9,6 +9,7 @@ export interface ReviewResponse {
   rating: number;
   title: string;
   content: string;
+  is_anonymous: boolean;
   is_approved: boolean;
   is_active: boolean;
   view_count: number;
@@ -26,6 +27,7 @@ export interface Review {
   content: string;
   counselor_id?: string;
   consultation_id?: string;
+  is_anonymous: boolean;
   is_approved: boolean;
   is_active: boolean;
   view_count: number;
@@ -57,6 +59,7 @@ function mapReviewResponse(response: ReviewResponse): Review {
     content: response.content,
     counselor_id: response.counselor_id?.toString(),
     consultation_id: response.consultation_id?.toString(),
+    is_anonymous: response.is_anonymous,
     is_approved: response.is_approved,
     is_active: response.is_active,
     view_count: response.view_count || 0,
