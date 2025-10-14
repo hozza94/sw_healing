@@ -5,14 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getPublishedNotices, Notice } from "@/lib/notices"
+import { getPublishedNotices, Notice, getNotice } from "@/lib/notices"
 import { useEffect, useState } from "react"
+import { NoticeDetailModal } from "@/components/ui/notice-detail-modal"
 
 export default function NoticesPage() {
   const router = useRouter();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadNotices() {
@@ -29,6 +32,23 @@ export default function NoticesPage() {
 
     loadNotices();
   }, []);
+
+  const handleNoticeClick = async (noticeId: string) => {
+    try {
+      const notice = await getNotice(noticeId);
+      if (notice) {
+        setSelectedNotice(notice);
+        setIsModalOpen(true);
+      }
+    } catch (err) {
+      console.error('공지사항 상세 정보 로딩 실패:', err);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedNotice(null);
+  };
 
   const getNoticeTypeLabel = (type: string) => {
     switch (type) {
@@ -104,7 +124,7 @@ export default function NoticesPage() {
         ) : (
           <div className="space-y-6">
             {notices.map((notice) => (
-              <Card key={notice.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => router.push(`/notices/${notice.id}`)}>
+              <Card key={notice.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => handleNoticeClick(notice.id)}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -152,7 +172,7 @@ export default function NoticesPage() {
                       className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/notices/${notice.id}`);
+                        handleNoticeClick(notice.id);
                       }}
                     >
                       <span>자세히 보기</span>
@@ -180,6 +200,13 @@ export default function NoticesPage() {
           </Card>
         </div>
       </div>
+
+      {/* 공지사항 상세 모달 */}
+      <NoticeDetailModal 
+        notice={selectedNotice}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   )
 } 
