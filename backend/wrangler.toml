@@ -1,0 +1,9 @@
+name = "sw-healing-api"
+main = "src/index.js"
+compatibility_date = "2025-10-14"
+
+[env.production]
+name = "sw-healing-api"
+
+[env.production.vars]
+CORS_ORIGINS = "https://sw-healing.pages.dev,https://app.suwon-healing.com"

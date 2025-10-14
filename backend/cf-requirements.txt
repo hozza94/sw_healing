@@ -1,0 +1,8 @@
+fastapi
+mangum
+libsql-experimental
+pydantic
+python-multipart
+python-jose
+passlib
+python-decouple

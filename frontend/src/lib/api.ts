@@ -1,5 +1,5 @@
-// Vercel API Routes를 사용하므로 상대 경로 사용
-const API_BASE_URL = '';
+// Cloudflare Workers 백엔드 사용
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sw-healing-api.hozza94.workers.dev';
 
 export interface ApiResponse<T = any> {
   data?: T;

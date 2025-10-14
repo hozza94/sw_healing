@@ -1,15 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Vercel 배포용 설정
-  output: 'standalone',
+  // Cloudflare Pages용 정적 빌드 설정
+  output: 'export',
   images: {
     unoptimized: true
   },
   trailingSlash: true,
   
-  // 환경 변수 설정 (필요시)
+  // 환경 변수 설정
   env: {
-    // 여기에 환경 변수 추가
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://sw-healing-api.hozza94.workers.dev',
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || '수원 힐링 상담센터'
   }
 };
 

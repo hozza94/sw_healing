@@ -87,9 +87,9 @@ export default function CounselorsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="text-4xl">
-                        {counselor.image_url ? (
+                        {counselor.profile_image ? (
                           <img 
-                            src={counselor.image_url} 
+                            src={counselor.profile_image} 
                             alt={counselor.name}
                             className="w-16 h-16 rounded-full object-cover"
                           />
