@@ -72,6 +72,14 @@ class ApiClient {
     });
   }
 
+  // PATCH 요청
+  async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
   // DELETE 요청
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: 'DELETE' });
@@ -90,6 +98,7 @@ export const API_ENDPOINTS = {
   // 상담사 관련
   COUNSELORS: '/api/counselors',
   COUNSELOR: (id: string) => `/api/counselors/${id}`,
+  COUNSELOR_TOGGLE_STATUS: (id: string) => `/api/counselors/${id}/toggle-status`,
   
   // 리뷰 관련
   REVIEWS: '/api/reviews',
