@@ -30,6 +30,12 @@
 - 캐시 관리
 - 모니터링
 
+### ⚡ [성능 최적화](PERFORMANCE_OPTIMIZATION.md)
+- 쿼리 최적화
+- 병렬 처리
+- 응답 압축
+- 성능 모니터링
+
 ## 🚀 빠른 시작
 
 ### 1. API 테스트
@@ -48,6 +54,9 @@ curl https://sw-healing-api.hozza94.workers.dev/api/cache/status
 
 # 캐시 초기화
 curl -X POST https://sw-healing-api.hozza94.workers.dev/api/cache/clear
+
+# 대시보드 데이터 (병렬 처리)
+curl https://sw-healing-api.hozza94.workers.dev/api/dashboard
 ```
 
 ### 2. API 문서 확인

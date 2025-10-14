@@ -40,6 +40,11 @@ import {
   getCacheStatus
 } from './cache.js';
 
+import { 
+  initDatabase, 
+  getDatabase 
+} from './database.js';
+
 export default {
   async fetch(request, env, ctx) {
     // 로거 초기화
@@ -47,6 +52,9 @@ export default {
     
     // 캐시 초기화
     const cache = initCache(env.CACHE);
+    
+    // 데이터베이스 초기화
+    const db = initDatabase(env);
     
     const startTime = Date.now();
     
@@ -57,12 +65,21 @@ export default {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
 
+    // 성능 최적화 헤더
+    const performanceHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Cache-Control': 'public, max-age=300', // 5분 캐싱
+      'Vary': 'Accept-Encoding'
+    };
+
     // OPTIONS 요청 처리 (CORS preflight)
     if (request.method === 'OPTIONS') {
       logger.debug('CORS Preflight Request', { method: request.method });
       return new Response(null, {
         status: 200,
-        headers: corsHeaders,
+        headers: { ...corsHeaders, ...performanceHeaders },
       });
     }
 
@@ -110,6 +127,8 @@ export default {
         response = handleCacheStatus(request, corsHeaders);
       } else if (path === '/api/cache/clear') {
         response = await handleCacheClear(request, corsHeaders);
+      } else if (path === '/api/dashboard') {
+        response = await handleDashboard(request, corsHeaders);
       } else {
         response = new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
@@ -146,10 +165,11 @@ function handleHealth(request, corsHeaders) {
   }, HTTP_STATUS.OK, corsHeaders);
 }
 
-// 상담사 목록
+// 상담사 목록 (최적화됨)
 async function handleCounselors(request, env, corsHeaders) {
   const logger = getLogger();
   const cache = getCache();
+  const db = getDatabase();
   const startTime = Date.now();
   
   try {
@@ -166,65 +186,13 @@ async function handleCounselors(request, env, corsHeaders) {
       return createSuccessResponse(cachedCounselors, HTTP_STATUS.OK, corsHeaders);
     }
 
-    logger.debug('Fetching counselors from database', {
+    logger.debug('Fetching counselors from database (optimized)', {
       hasDatabaseUrl: !!env.DATABASE_URL,
       hasAuthToken: !!env.DATABASE_AUTH_TOKEN
     });
     
-    // 환경 변수 검증
-    if (!env.DATABASE_URL) {
-      throw new DatabaseError('Database URL not configured');
-    }
-    
-    // Turso HTTP API 사용 (libsql://을 https://로 변환)
-    const httpUrl = env.DATABASE_URL.replace('libsql://', 'https://');
-    const authToken = env.DATABASE_AUTH_TOKEN;
-    
-    if (!authToken) {
-      throw new DatabaseError('Database authentication token not configured');
-    }
-    
-    const query = 'SELECT * FROM counselors WHERE is_active = 1';
-    logger.debug('Executing database query', { query });
-    
-    const response = await fetch(`${httpUrl}/v1/execute`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        stmt: {
-          sql: query
-        }
-      })
-    });
-
-    const responseTime = Date.now() - startTime;
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      logDatabase('SELECT', query, false, responseTime, {
-        status: response.status,
-        error: errorText
-      });
-      throw new DatabaseError(`Database request failed: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    
-    // Turso 응답 구조에 따라 데이터 추출 및 변환
-    const rawRows = data.result?.rows || [];
-    const columns = data.result?.cols || [];
-    
-    const counselors = rawRows.map(row => {
-      const counselor = {};
-      columns.forEach((col, index) => {
-        const value = row[index];
-        counselor[col.name] = value?.value || value;
-      });
-      return counselor;
-    });
+    // 최적화된 데이터베이스 쿼리 사용
+    const counselors = await db.getCounselors(true);
 
     const responseData = {
       counselors: counselors,
@@ -236,15 +204,14 @@ async function handleCounselors(request, env, corsHeaders) {
     // 캐시에 저장
     await cacheCounselors(cache, responseData);
 
-    logDatabase('SELECT', query, true, responseTime, {
-      rowCount: counselors.length
-    });
+    const responseTime = Date.now() - startTime;
     
-    logger.info('Successfully fetched counselors from database', {
+    logger.info('Successfully fetched counselors from database (optimized)', {
       count: counselors.length,
       responseTime: `${responseTime}ms`,
       source: 'database',
-      cached: true
+      cached: true,
+      optimized: true
     });
     
     return createSuccessResponse(responseData, HTTP_STATUS.OK, corsHeaders);
@@ -789,6 +756,61 @@ async function handleCacheClear(request, corsHeaders) {
     
   } catch (error) {
     logger.error('Failed to clear cache', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 대시보드 데이터 (병렬 처리 예시)
+async function handleDashboard(request, corsHeaders) {
+  const logger = getLogger();
+  const cache = getCache();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    // 병렬로 여러 데이터 조회
+    const [counselors, notices, reviews, stats] = await Promise.all([
+      db.getCounselors(true),
+      db.getNotices(true),
+      db.getReviews(true),
+      db.getDatabaseStats()
+    ]);
+
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Dashboard data fetched in parallel', {
+      counselorCount: counselors.length,
+      noticeCount: notices.length,
+      reviewCount: reviews.length,
+      responseTime: `${responseTime}ms`,
+      parallel: true
+    });
+
+    const dashboardData = {
+      summary: {
+        totalCounselors: counselors.length,
+        totalNotices: notices.length,
+        totalReviews: reviews.length,
+        totalConsultations: stats.consultations
+      },
+      recent: {
+        counselors: counselors.slice(0, 3), // 최근 3명
+        notices: notices.slice(0, 3),       // 최근 3개
+        reviews: reviews.slice(0, 3)        // 최근 3개
+      },
+      stats: stats
+    };
+
+    return createSuccessResponse(dashboardData, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to fetch dashboard data', {
+      error: error.message,
+      responseTime: `${responseTime}ms`
+    });
+    
     return createErrorResponse(error, corsHeaders);
   }
 }
