@@ -17,14 +17,18 @@
 - **Database**: Turso (SQLite)
 - **API**: REST API
 - **Deployment**: Wrangler CLI
+- **Legacy**: FastAPI 코드는 `fastapi-legacy/` 폴더에 보관
 
 ## 📁 프로젝트 구조
 
 ```
 sw_healing/
 ├── docs/              # 문서
-├── backend/           # Cloudflare Workers 백엔드
+├── backend/           # 백엔드 (Cloudflare Workers)
 │   ├── src/           # Workers 소스 코드
+│   │   └── index.js   # Workers JavaScript
+│   ├── fastapi-legacy/# FastAPI 레거시 코드 (참고용)
+│   │   └── app/       # 기존 FastAPI 구조
 │   └── wrangler.toml  # Workers 설정
 ├── frontend/          # Next.js 프론트엔드
 │   ├── src/           # 소스 코드
@@ -60,11 +64,14 @@ npm install
 
 # 백엔드 의존성 설치
 cd backend
+
+# Node.js 의존성 (Workers)
 npm install
-cd ..
 
 # Wrangler CLI 설치 (전역)
 npm install -g wrangler
+
+cd ..
 ```
 
 ### 3. 환경 변수 설정
@@ -80,7 +87,7 @@ NEXT_PUBLIC_APP_NAME=수원 힐링 상담센터
 npm run dev
 # http://localhost:3000
 
-# 백엔드 개발 서버 (필요시)
+# 백엔드 개발 서버
 cd backend
 wrangler dev
 # http://localhost:8787
