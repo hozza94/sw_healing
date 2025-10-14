@@ -36,6 +36,12 @@
 - 응답 압축
 - 성능 모니터링
 
+### 🧠 [메모리 최적화](MEMORY_OPTIMIZATION.md)
+- 메모리 모니터링
+- 자동 가비지 컬렉션
+- 버퍼 관리
+- 메모리 압박 감지
+
 ## 🚀 빠른 시작
 
 ### 1. API 테스트
@@ -57,6 +63,12 @@ curl -X POST https://sw-healing-api.hozza94.workers.dev/api/cache/clear
 
 # 대시보드 데이터 (병렬 처리)
 curl https://sw-healing-api.hozza94.workers.dev/api/dashboard
+
+# 메모리 상태 확인
+curl https://sw-healing-api.hozza94.workers.dev/api/memory/status
+
+# 메모리 최적화 실행
+curl -X POST https://sw-healing-api.hozza94.workers.dev/api/memory/optimize
 ```
 
 ### 2. API 문서 확인

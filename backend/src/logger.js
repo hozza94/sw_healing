@@ -70,7 +70,7 @@ class LogFormatter {
   }
 }
 
-// 메트릭 수집기
+// 메트릭 수집기 (메모리 최적화됨)
 class MetricsCollector {
   constructor() {
     this.metrics = {
@@ -80,6 +80,11 @@ class MetricsCollector {
       databaseQueries: 0,
       databaseErrors: 0
     };
+    
+    // 메모리 최적화 설정
+    this.maxResponseTimeHistory = 100; // 최대 100개만 유지
+    this.cleanupInterval = 300000; // 5분마다 정리
+    this.lastCleanup = Date.now();
   }
 
   incrementRequests() {
@@ -92,9 +97,44 @@ class MetricsCollector {
 
   recordResponseTime(time) {
     this.metrics.responseTime.push(time);
-    // 최근 100개만 유지
-    if (this.metrics.responseTime.length > 100) {
-      this.metrics.responseTime = this.metrics.responseTime.slice(-100);
+    
+    // 메모리 최적화: 최근 100개만 유지
+    if (this.metrics.responseTime.length > this.maxResponseTimeHistory) {
+      this.metrics.responseTime = this.metrics.responseTime.slice(-this.maxResponseTimeHistory);
+    }
+    
+    // 주기적 정리
+    this.scheduleCleanup();
+  }
+
+  // 주기적 메모리 정리
+  scheduleCleanup() {
+    const now = Date.now();
+    if (now - this.lastCleanup > this.cleanupInterval) {
+      this.cleanup();
+      this.lastCleanup = now;
+    }
+  }
+
+  // 메모리 정리
+  cleanup() {
+    // 응답 시간 배열 정리
+    if (this.metrics.responseTime.length > this.maxResponseTimeHistory) {
+      this.metrics.responseTime = this.metrics.responseTime.slice(-this.maxResponseTimeHistory);
+    }
+    
+    // 메트릭 카운터 리셋 (너무 큰 숫자 방지)
+    if (this.metrics.requests > 1000000) {
+      this.metrics.requests = Math.floor(this.metrics.requests / 2);
+    }
+    if (this.metrics.errors > 100000) {
+      this.metrics.errors = Math.floor(this.metrics.errors / 2);
+    }
+    if (this.metrics.databaseQueries > 1000000) {
+      this.metrics.databaseQueries = Math.floor(this.metrics.databaseQueries / 2);
+    }
+    if (this.metrics.databaseErrors > 100000) {
+      this.metrics.databaseErrors = Math.floor(this.metrics.databaseErrors / 2);
     }
   }
 

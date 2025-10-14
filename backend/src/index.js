@@ -45,6 +45,13 @@ import {
   getDatabase 
 } from './database.js';
 
+import { 
+  initMemoryMonitor, 
+  getMemoryMonitor,
+  getMemoryStatus,
+  optimizeMemory
+} from './memory.js';
+
 export default {
   async fetch(request, env, ctx) {
     // 로거 초기화
@@ -55,6 +62,9 @@ export default {
     
     // 데이터베이스 초기화
     const db = initDatabase(env);
+    
+    // 메모리 모니터 초기화
+    const memoryMonitor = initMemoryMonitor();
     
     const startTime = Date.now();
     
@@ -129,6 +139,10 @@ export default {
         response = await handleCacheClear(request, corsHeaders);
       } else if (path === '/api/dashboard') {
         response = await handleDashboard(request, corsHeaders);
+      } else if (path === '/api/memory/status') {
+        response = handleMemoryStatus(request, corsHeaders);
+      } else if (path === '/api/memory/optimize') {
+        response = await handleMemoryOptimize(request, corsHeaders);
       } else {
         response = new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
@@ -811,6 +825,54 @@ async function handleDashboard(request, corsHeaders) {
       responseTime: `${responseTime}ms`
     });
     
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 메모리 상태 조회
+function handleMemoryStatus(request, corsHeaders) {
+  const logger = getLogger();
+  
+  try {
+    const memoryStatus = getMemoryStatus();
+    
+    logger.debug('Memory status requested', { 
+      available: memoryStatus.available,
+      pressure: memoryStatus.pressure
+    });
+    
+    return createSuccessResponse({
+      memory: memoryStatus,
+      timestamp: new Date().toISOString()
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    logger.error('Failed to get memory status', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 메모리 최적화 실행
+async function handleMemoryOptimize(request, corsHeaders) {
+  const logger = getLogger();
+  
+  try {
+    const optimized = optimizeMemory();
+    
+    logger.info('Memory optimization performed', { 
+      optimized: optimized
+    });
+    
+    return createSuccessResponse({
+      optimized: optimized,
+      message: optimized 
+        ? 'Memory optimization completed' 
+        : 'No memory optimization needed',
+      timestamp: new Date().toISOString()
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    logger.error('Failed to optimize memory', { error: error.message });
     return createErrorResponse(error, corsHeaders);
   }
 }

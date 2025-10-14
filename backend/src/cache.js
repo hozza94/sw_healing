@@ -18,25 +18,48 @@ export const CACHE_TTL = {
   METRICS: 30            // 30초
 };
 
-// 메모리 캐시 (단기 캐싱용)
+// 메모리 캐시 (메모리 최적화됨)
 class MemoryCache {
   constructor() {
     this.cache = new Map();
     this.timers = new Map();
+    
+    // 메모리 최적화 설정
+    this.maxSize = 100; // 최대 캐시 항목 수
+    this.maxMemoryUsage = 5 * 1024 * 1024; // 5MB 제한
+    this.currentMemoryUsage = 0;
+    this.cleanupInterval = 300000; // 5분마다 정리
+    this.lastCleanup = Date.now();
   }
 
   set(key, value, ttl = 300) {
+    // 메모리 사용량 확인
+    if (this.shouldCleanup()) {
+      this.cleanup();
+    }
+
     // 기존 타이머 제거
     if (this.timers.has(key)) {
       clearTimeout(this.timers.get(key));
+    }
+
+    // 메모리 사용량 계산
+    const itemSize = this.calculateItemSize(value);
+    
+    // 메모리 제한 확인
+    if (this.currentMemoryUsage + itemSize > this.maxMemoryUsage) {
+      this.aggressiveCleanup();
     }
 
     // 캐시 저장
     this.cache.set(key, {
       value,
       timestamp: Date.now(),
-      ttl: ttl * 1000
+      ttl: ttl * 1000,
+      size: itemSize
     });
+
+    this.currentMemoryUsage += itemSize;
 
     // TTL 타이머 설정
     const timer = setTimeout(() => {
@@ -60,10 +83,80 @@ class MemoryCache {
   }
 
   delete(key) {
+    const item = this.cache.get(key);
+    if (item) {
+      this.currentMemoryUsage -= item.size || 0;
+    }
+    
     this.cache.delete(key);
     if (this.timers.has(key)) {
       clearTimeout(this.timers.get(key));
       this.timers.delete(key);
+    }
+  }
+
+  // 아이템 크기 계산
+  calculateItemSize(value) {
+    try {
+      return JSON.stringify(value).length * 2; // 대략적인 바이트 크기
+    } catch (error) {
+      return 1000; // 기본값
+    }
+  }
+
+  // 정리 필요 여부 확인
+  shouldCleanup() {
+    const now = Date.now();
+    return (
+      this.cache.size >= this.maxSize ||
+      this.currentMemoryUsage >= this.maxMemoryUsage * 0.8 ||
+      now - this.lastCleanup > this.cleanupInterval
+    );
+  }
+
+  // 메모리 정리
+  cleanup() {
+    const now = Date.now();
+    const toDelete = [];
+
+    // 만료된 항목들 찾기
+    for (const [key, item] of this.cache) {
+      if (now - item.timestamp > item.ttl) {
+        toDelete.push(key);
+      }
+    }
+
+    // 삭제 실행
+    toDelete.forEach(key => this.delete(key));
+
+    // 여전히 크기가 크면 오래된 항목들 삭제
+    if (this.cache.size > this.maxSize) {
+      const sortedItems = Array.from(this.cache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      const toDeleteCount = this.cache.size - this.maxSize;
+      for (let i = 0; i < toDeleteCount; i++) {
+        this.delete(sortedItems[i][0]);
+      }
+    }
+
+    this.lastCleanup = now;
+  }
+
+  // 적극적 정리
+  aggressiveCleanup() {
+    // 메모리 사용량의 50% 정리
+    const targetMemory = this.maxMemoryUsage * 0.5;
+    
+    const sortedItems = Array.from(this.cache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    let freedMemory = 0;
+    for (const [key, item] of sortedItems) {
+      if (this.currentMemoryUsage - freedMemory <= targetMemory) break;
+      
+      this.delete(key);
+      freedMemory += item.size || 0;
     }
   }
 
