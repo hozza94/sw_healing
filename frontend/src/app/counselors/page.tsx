@@ -132,7 +132,7 @@ export default function CounselorsPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">소개</h4>
-                      <p className="text-gray-600 leading-relaxed">{counselor.description}</p>
+                      <p className="text-gray-600 leading-relaxed">{counselor.bio}</p>
                     </div>
                                                     <div className="pt-4">
                                   <Button asChild className="w-full px-6 py-3 text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 rounded-xl">

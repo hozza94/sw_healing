@@ -93,7 +93,7 @@ export default function CounselorSelector({ onSelect, selectedCounselorId, onNex
                   </div>
                 </div>
                 <p className="text-blue-800 leading-relaxed">
-                  {selectedCounselor.description}
+                  {selectedCounselor.bio}
                 </p>
               </div>
               <Button 
@@ -135,7 +135,7 @@ export default function CounselorSelector({ onSelect, selectedCounselorId, onNex
                       </div>
                     </div>
                     <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
-                      {counselor.description}
+                      {counselor.bio}
                     </p>
                   </div>
                 </div>

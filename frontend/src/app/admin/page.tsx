@@ -262,9 +262,9 @@ function CounselorsTab() {
                   <p className="text-gray-600">{counselor.specialization}</p>
                   <p className="text-sm text-gray-500">경력: {counselor.experience}</p>
                   <p className="text-sm text-gray-500">{counselor.education}</p>
-                  {counselor.description && (
+                  {counselor.bio && (
                     <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                      {counselor.description}
+                      {counselor.bio}
                     </p>
                   )}
                 </div>
