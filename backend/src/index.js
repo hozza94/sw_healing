@@ -2,6 +2,21 @@
  * Cloudflare Workers용 수원 힐링 상담센터 API
  */
 
+import { 
+  createErrorResponse, 
+  createSuccessResponse, 
+  logError,
+  validateId,
+  validateRequired,
+  validateEmail,
+  validatePhone,
+  handleDatabaseError,
+  NotFoundError,
+  ValidationError,
+  DatabaseError,
+  HTTP_STATUS
+} from './errors.js';
+
 export default {
   async fetch(request, env, ctx) {
     // CORS 헤더 설정
@@ -55,28 +70,19 @@ export default {
         });
       }
     } catch (error) {
-      console.error('API Error:', error);
-      return new Response(JSON.stringify({ 
-        error: 'Internal Server Error',
-        message: error.message 
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+      logError(error, { path, method });
+      return createErrorResponse(error, corsHeaders);
     }
   },
 };
 
 // 헬스 체크
 function handleHealth(request, corsHeaders) {
-  return new Response(JSON.stringify({
+  return createSuccessResponse({
     status: 'healthy',
     message: '수원 힐링 상담센터 API',
-    timestamp: new Date().toISOString(),
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+    version: '1.0.0'
+  }, HTTP_STATUS.OK, corsHeaders);
 }
 
 // 상담사 목록
@@ -143,43 +149,10 @@ async function handleCounselors(request, env, corsHeaders) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error) {
-    console.error('Counselors API Error:', error);
-    
-    // 에러 발생 시 샘플 데이터 반환
-    const sampleCounselors = [
-      {
-        id: 1,
-        name: "김상담",
-        email: "counselor1@suwon-healing.com",
-        phone: "010-1000-1000",
-        specialization: "개인상담",
-        education: "서울대학교 심리학과 졸업",
-        experience: "10년",
-        bio: "따뜻하고 전문적인 상담을 제공합니다.",
-        profile_image: "/images/counselor1.jpg",
-        is_online: true,
-        is_active: true,
-        rating: 4.8,
-        total_reviews: 25,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      }
-    ];
-    
-    return new Response(JSON.stringify({
-      counselors: sampleCounselors,
-      total: sampleCounselors.length,
-      page: 1,
-      size: sampleCounselors.length,
-      debug: {
-        error: error.message,
-        database_url: env.DATABASE_URL,
-        has_auth_token: !!env.DATABASE_AUTH_TOKEN
-      }
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    if (error instanceof DatabaseError) {
+      throw error;
+    }
+    handleDatabaseError(error, 'fetch counselors');
   }
 }
 
@@ -462,24 +435,43 @@ async function handleConsultations(request, env, corsHeaders) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } else if (request.method === 'POST') {
-    const body = await request.json();
-    
-    // 상담 신청 처리 (실제로는 데이터베이스에 저장)
-    const newConsultation = {
-      id: Date.now(),
-      ...body,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    return new Response(JSON.stringify({
-      id: newConsultation.id,
-      message: '상담 신청이 완료되었습니다.'
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    try {
+      const body = await request.json();
+      
+      // 입력 검증
+      validateRequired(body.user_name, 'user_name');
+      validateRequired(body.user_email, 'user_email');
+      validateRequired(body.user_phone, 'user_phone');
+      validateRequired(body.consultation_type, 'consultation_type');
+      
+      validateEmail(body.user_email);
+      validatePhone(body.user_phone);
+      
+      if (body.counselor_id) {
+        validateId(body.counselor_id, 'counselor');
+      }
+      
+      // 상담 신청 처리 (실제로는 데이터베이스에 저장)
+      const newConsultation = {
+        id: Date.now(),
+        ...body,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      return createSuccessResponse({
+        id: newConsultation.id,
+        message: '상담 신청이 완료되었습니다.'
+      }, HTTP_STATUS.CREATED, corsHeaders);
+      
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      logError(error, { operation: 'consultation validation' });
+      throw new ValidationError('Invalid request data', { originalError: error.message });
+    }
   }
 }
 
@@ -498,14 +490,8 @@ async function handleOpenAPI(request, corsHeaders) {
       },
     });
   } catch (error) {
-    console.error('OpenAPI Error:', error);
-    return new Response(JSON.stringify({ 
-      error: 'Failed to load OpenAPI spec',
-      message: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    logError(error, { operation: 'load OpenAPI spec' });
+    return createErrorResponse(error, corsHeaders);
   }
 }
 
