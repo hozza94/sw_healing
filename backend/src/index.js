@@ -17,8 +17,21 @@ import {
   HTTP_STATUS
 } from './errors.js';
 
+import { 
+  initLogger, 
+  getLogger, 
+  logRequest, 
+  logDatabase,
+  createRequestLogger,
+  measurePerformance
+} from './logger.js';
+
 export default {
   async fetch(request, env, ctx) {
+    // 로거 초기화
+    const logger = initLogger(env);
+    const startTime = Date.now();
+    
     // CORS 헤더 설정
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
@@ -28,6 +41,7 @@ export default {
 
     // OPTIONS 요청 처리 (CORS preflight)
     if (request.method === 'OPTIONS') {
+      logger.debug('CORS Preflight Request', { method: request.method });
       return new Response(null, {
         status: 200,
         headers: corsHeaders,
@@ -37,40 +51,65 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
+    
+    logger.info('Request Started', {
+      method,
+      path,
+      userAgent: request.headers.get('User-Agent'),
+      ip: request.headers.get('CF-Connecting-IP') || 'unknown'
+    });
 
+    let response;
+    
     try {
       // API 라우팅
       if (path === '/api/health') {
-        return handleHealth(request, corsHeaders);
+        response = handleHealth(request, corsHeaders);
       } else if (path === '/api/counselors') {
-        return await handleCounselors(request, env, corsHeaders);
+        response = await handleCounselors(request, env, corsHeaders);
       } else if (path.startsWith('/api/counselors/')) {
         const id = path.split('/')[3];
-        return await handleCounselorById(request, env, corsHeaders, id);
+        response = await handleCounselorById(request, env, corsHeaders, id);
       } else if (path === '/api/notices') {
-        return await handleNotices(request, env, corsHeaders);
+        response = await handleNotices(request, env, corsHeaders);
       } else if (path.startsWith('/api/notices/')) {
         const id = path.split('/')[3];
-        return await handleNoticeById(request, env, corsHeaders, id);
+        response = await handleNoticeById(request, env, corsHeaders, id);
       } else if (path === '/api/reviews') {
-        return await handleReviews(request, env, corsHeaders);
+        response = await handleReviews(request, env, corsHeaders);
       } else if (path.startsWith('/api/reviews/')) {
         const id = path.split('/')[3];
-        return await handleReviewById(request, env, corsHeaders, id);
+        response = await handleReviewById(request, env, corsHeaders, id);
       } else if (path === '/api/consultations') {
-        return await handleConsultations(request, env, corsHeaders);
+        response = await handleConsultations(request, env, corsHeaders);
       } else if (path === '/openapi.json') {
-        return handleOpenAPI(request, corsHeaders);
+        response = handleOpenAPI(request, corsHeaders);
       } else if (path === '/docs' || path === '/api-docs') {
-        return handleAPIDocs(request, corsHeaders);
+        response = handleAPIDocs(request, corsHeaders);
+      } else if (path === '/api/metrics') {
+        response = handleMetrics(request, corsHeaders);
       } else {
-        return new Response(JSON.stringify({ error: 'Not Found' }), {
+        response = new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
+      
+      // 성공 로깅
+      const duration = Date.now() - startTime;
+      logger.request(method, path, response.status, duration);
+      
+      return response;
+      
     } catch (error) {
-      logError(error, { path, method });
+      const duration = Date.now() - startTime;
+      logger.error('Request Failed', {
+        method,
+        path,
+        duration: `${duration}ms`,
+        error: error.message,
+        stack: error.stack
+      });
       return createErrorResponse(error, corsHeaders);
     }
   },
@@ -87,16 +126,30 @@ function handleHealth(request, corsHeaders) {
 
 // 상담사 목록
 async function handleCounselors(request, env, corsHeaders) {
+  const logger = getLogger();
+  const startTime = Date.now();
+  
   try {
-    console.log('🔗 데이터베이스 연결 시도...');
-    console.log('DATABASE_URL:', env.DATABASE_URL);
-    console.log('AUTH_TOKEN 존재:', !!env.DATABASE_AUTH_TOKEN);
+    logger.debug('Fetching counselors from database', {
+      hasDatabaseUrl: !!env.DATABASE_URL,
+      hasAuthToken: !!env.DATABASE_AUTH_TOKEN
+    });
+    
+    // 환경 변수 검증
+    if (!env.DATABASE_URL) {
+      throw new DatabaseError('Database URL not configured');
+    }
     
     // Turso HTTP API 사용 (libsql://을 https://로 변환)
     const httpUrl = env.DATABASE_URL.replace('libsql://', 'https://');
+    const authToken = env.DATABASE_AUTH_TOKEN;
     
-    // 임시로 하드코딩된 토큰 사용 (테스트용)
-    const authToken = env.DATABASE_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NTE5YTM5Zi1kZTc5LTQxNGYtOTA0ZC1kOGI2NDliMDZmN2MiLCJpYXQiOjE3NTQ0NDMzOTksInJpZCI6IjA5OGQzZTNhLWE0OWMtNGQ0NC04MGIxLWVjOTM3MzY4YjQ5MSJ9.FZgSEU3NZJj7lhaLHfnNg6KxoLUGO9u9MLsa9nLI3HBCKVf6Ke1O4-m0WMs_CQdtcLEAYL3xNIID8E8HnRqzAA';
+    if (!authToken) {
+      throw new DatabaseError('Database authentication token not configured');
+    }
+    
+    const query = 'SELECT * FROM counselors WHERE is_active = 1';
+    logger.debug('Executing database query', { query });
     
     const response = await fetch(`${httpUrl}/v1/execute`, {
       method: 'POST',
@@ -106,23 +159,23 @@ async function handleCounselors(request, env, corsHeaders) {
       },
       body: JSON.stringify({
         stmt: {
-          sql: 'SELECT * FROM counselors'
+          sql: query
         }
       })
     });
 
-    console.log('응답 상태:', response.status);
-    console.log('응답 헤더:', Object.fromEntries(response.headers.entries()));
+    const responseTime = Date.now() - startTime;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('데이터베이스 요청 실패:', response.status, errorText);
-      throw new Error(`Database request failed: ${response.status} - ${errorText}`);
+      logDatabase('SELECT', query, false, responseTime, {
+        status: response.status,
+        error: errorText
+      });
+      throw new DatabaseError(`Database request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('데이터베이스 응답:', data);
-    console.log('응답 구조:', Object.keys(data));
     
     // Turso 응답 구조에 따라 데이터 추출 및 변환
     const rawRows = data.result?.rows || [];
@@ -136,22 +189,40 @@ async function handleCounselors(request, env, corsHeaders) {
       });
       return counselor;
     });
+
+    logDatabase('SELECT', query, true, responseTime, {
+      rowCount: counselors.length
+    });
     
-    console.log('변환된 상담사 데이터:', counselors);
+    logger.info('Successfully fetched counselors', {
+      count: counselors.length,
+      responseTime: `${responseTime}ms`
+    });
     
-    return new Response(JSON.stringify({
+    return createSuccessResponse({
       counselors: counselors,
       total: counselors.length,
       page: 1,
       size: counselors.length
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    }, HTTP_STATUS.OK, corsHeaders);
+    
   } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
     if (error instanceof DatabaseError) {
+      logger.error('Database error in handleCounselors', {
+        error: error.message,
+        responseTime: `${responseTime}ms`
+      });
       throw error;
     }
+    
+    logger.error('Unexpected error in handleCounselors', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
     handleDatabaseError(error, 'fetch counselors');
   }
 }
@@ -435,8 +506,19 @@ async function handleConsultations(request, env, corsHeaders) {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } else if (request.method === 'POST') {
+    const logger = getLogger();
+    const startTime = Date.now();
+    
     try {
       const body = await request.json();
+      
+      logger.debug('Processing consultation request', {
+        hasUserName: !!body.user_name,
+        hasUserEmail: !!body.user_email,
+        hasUserPhone: !!body.user_phone,
+        hasConsultationType: !!body.consultation_type,
+        hasCounselorId: !!body.counselor_id
+      });
       
       // 입력 검증
       validateRequired(body.user_name, 'user_name');
@@ -451,6 +533,11 @@ async function handleConsultations(request, env, corsHeaders) {
         validateId(body.counselor_id, 'counselor');
       }
       
+      logger.info('Validation passed for consultation request', {
+        userEmail: body.user_email,
+        consultationType: body.consultation_type
+      });
+      
       // 상담 신청 처리 (실제로는 데이터베이스에 저장)
       const newConsultation = {
         id: Date.now(),
@@ -460,16 +547,36 @@ async function handleConsultations(request, env, corsHeaders) {
         updated_at: new Date().toISOString()
       };
       
+      const responseTime = Date.now() - startTime;
+      
+      logger.info('Consultation request created successfully', {
+        consultationId: newConsultation.id,
+        userEmail: body.user_email,
+        responseTime: `${responseTime}ms`
+      });
+      
       return createSuccessResponse({
         id: newConsultation.id,
         message: '상담 신청이 완료되었습니다.'
       }, HTTP_STATUS.CREATED, corsHeaders);
       
     } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
       if (error instanceof ValidationError) {
+        logger.warn('Validation failed for consultation request', {
+          error: error.message,
+          responseTime: `${responseTime}ms`
+        });
         throw error;
       }
-      logError(error, { operation: 'consultation validation' });
+      
+      logger.error('Unexpected error in consultation request', {
+        error: error.message,
+        responseTime: `${responseTime}ms`,
+        stack: error.stack
+      });
+      
       throw new ValidationError('Invalid request data', { originalError: error.message });
     }
   }
@@ -558,4 +665,31 @@ async function handleAPIDocs(request, corsHeaders) {
       ...corsHeaders 
     },
   });
+}
+
+// 메트릭 조회
+function handleMetrics(request, corsHeaders) {
+  const logger = getLogger();
+  
+  try {
+    const metrics = logger.getMetrics();
+    
+    logger.debug('Metrics requested', { 
+      requestCount: metrics.requests,
+      errorCount: metrics.errors 
+    });
+    
+    return createSuccessResponse({
+      metrics: {
+        ...metrics,
+        uptime: 'N/A', // Cloudflare Workers에서는 process.uptime() 사용 불가
+        memory: 'N/A'  // Cloudflare Workers에서는 process.memoryUsage() 사용 불가
+      },
+      timestamp: new Date().toISOString()
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    logger.error('Failed to get metrics', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
 }

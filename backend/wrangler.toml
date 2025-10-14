@@ -12,6 +12,8 @@ name = "dev-sw-healing-api"
 [env.development.vars]
 CORS_ORIGINS = "https://develop-sw-healing.pages.dev,http://localhost:3000"
 DATABASE_URL = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
+LOG_LEVEL = "DEBUG"
+ENVIRONMENT = "development"
 
 [env.production]
 name = "sw-healing-api"
@@ -19,3 +21,5 @@ name = "sw-healing-api"
 [env.production.vars]
 CORS_ORIGINS = "https://sw-healing.pages.dev,https://app.suwon-healing.com"
 DATABASE_URL = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
+LOG_LEVEL = "INFO"
+ENVIRONMENT = "production"
