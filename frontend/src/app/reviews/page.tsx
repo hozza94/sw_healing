@@ -5,14 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getApprovedReviews, Review } from "@/lib/reviews"
+import { getApprovedReviews, Review, getReview } from "@/lib/reviews"
 import { useEffect, useState } from "react"
+import { ReviewDetailModal } from "@/components/ui/review-detail-modal"
 
 export default function ReviewsPage() {
   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadReviews() {
@@ -29,6 +32,23 @@ export default function ReviewsPage() {
 
     loadReviews();
   }, []);
+
+  const handleReviewClick = async (reviewId: string) => {
+    try {
+      const review = await getReview(reviewId);
+      if (review) {
+        setSelectedReview(review);
+        setIsModalOpen(true);
+      }
+    } catch (err) {
+      console.error('리뷰 상세 정보 로딩 실패:', err);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedReview(null);
+  };
 
   if (isLoading) {
     return (
@@ -85,7 +105,7 @@ export default function ReviewsPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-8">
             {reviews.map((review) => (
-              <Card key={review.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => router.push(`/reviews/${review.id}`)}>
+              <Card key={review.id} className="hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group" onClick={() => handleReviewClick(review.id)}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
@@ -122,7 +142,7 @@ export default function ReviewsPage() {
                       className="bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-2 border-gray-300 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/reviews/${review.id}`);
+                        handleReviewClick(review.id);
                       }}
                     >
                       <span>자세히 보기</span>
@@ -150,6 +170,13 @@ export default function ReviewsPage() {
           </Card>
         </div>
       </div>
+
+      {/* 리뷰 상세 모달 */}
+      <ReviewDetailModal 
+        review={selectedReview}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+      />
     </div>
   )
 } 

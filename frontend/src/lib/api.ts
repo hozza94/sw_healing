@@ -1,5 +1,5 @@
-// Cloudflare Workers 백엔드 사용
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sw-healing-api.hozza94.workers.dev';
+// Next.js API Routes 사용 (정적 빌드에서는 상대 경로 사용)
+const API_BASE_URL = '';
 
 export interface ApiResponse<T = any> {
   data?: T;
