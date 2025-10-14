@@ -99,6 +99,7 @@ export const API_ENDPOINTS = {
   COUNSELORS: '/api/counselors',
   COUNSELOR: (id: string) => `/api/counselors/${id}`,
   COUNSELOR_TOGGLE_STATUS: (id: string) => `/api/counselors/${id}/toggle-status`,
+  COUNSELOR_UPLOAD_IMAGE: '/api/counselors/upload-image',
   
   // 리뷰 관련
   REVIEWS: '/api/reviews',
