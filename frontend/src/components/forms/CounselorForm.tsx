@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { createCounselor, updateCounselor, Counselor, CreateCounselorRequest, UpdateCounselorRequest } from '@/lib/counselors';
+import { toast } from '@/components/ui/toast';
 
 interface CounselorFormProps {
   counselor?: Counselor;
@@ -40,22 +41,32 @@ export default function CounselorForm({ counselor, onSuccess, trigger }: Counsel
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('폼 제출 시작:', formData);
     setIsSubmitting(true);
 
     try {
       if (counselor) {
         // 수정
+        console.log('상담사 수정 모드');
         const updateData: UpdateCounselorRequest = {
           id: counselor.id,
           ...formData
         };
-        await updateCounselor(updateData);
+        console.log('수정 데이터:', updateData);
+        const result = await updateCounselor(updateData);
+        console.log('상담사 수정 결과:', result);
+        toast.success('상담사 수정 완료', '상담사 정보가 성공적으로 수정되었습니다.');
       } else {
         // 새로 추가
-        await createCounselor(formData);
+        console.log('새 상담사 추가 모드');
+        console.log('추가할 데이터:', formData);
+        const result = await createCounselor(formData);
+        console.log('상담사 추가 결과:', result);
+        toast.success('상담사 추가 완료', '새 상담사가 성공적으로 추가되었습니다.');
       }
       
       setOpen(false);
+      console.log('상담사 추가 성공, 목록 새로고침 호출');
       onSuccess();
       // 폼 초기화
       setFormData({
@@ -71,7 +82,7 @@ export default function CounselorForm({ counselor, onSuccess, trigger }: Counsel
       });
     } catch (error) {
       console.error('상담사 저장 실패:', error);
-      alert('상담사 저장에 실패했습니다.');
+      toast.error('저장 실패', '상담사 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);
     }
@@ -212,16 +223,17 @@ export default function CounselorForm({ counselor, onSuccess, trigger }: Counsel
              />
           </div>
 
+          {/* 폼 버튼들 */}
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="border-gray-300 text-gray-700 hover:bg-gray-100">
+              취소
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {isSubmitting ? '저장 중...' : (counselor ? '수정' : '추가')}
+            </Button>
+          </div>
+
         </form>
-        
-        <DialogFooter className="bg-gray-50 p-6 -m-6 mt-6 border-t border-gray-200 flex-shrink-0">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)} className="border-gray-300 text-gray-700 hover:bg-gray-100">
-            취소
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white">
-            {isSubmitting ? '저장 중...' : (counselor ? '수정' : '추가')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

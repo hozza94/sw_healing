@@ -73,8 +73,24 @@ function mapReviewResponse(response: ReviewResponse): Review {
 // 모든 후기 목록 가져오기 (관리자용)
 export async function getReviews(): Promise<{reviews: Review[], total: number, page: number, size: number} | null> {
   try {
-    const response = await apiClient.get<{reviews: ReviewResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.REVIEWS);
-    if (response.data) {
+    console.log('getReviews 호출 시작');
+    const response = await apiClient.get<{success: boolean, data: {reviews: ReviewResponse[], total: number, page: number, size: number}, timestamp: string}>(API_ENDPOINTS.REVIEWS);
+    console.log('getReviews API 응답:', response);
+    
+    // 백엔드 응답 구조: {success: true, data: {reviews: [...], total: 5, page: 1, size: 5}, timestamp: "..."}
+    if (response.data && response.data.data && response.data.data.reviews) {
+      console.log('getReviews 성공 - 새로운 구조 응답:', response.data.data.reviews);
+      return {
+        reviews: response.data.data.reviews.map(mapReviewResponse),
+        total: response.data.data.total,
+        page: response.data.data.page,
+        size: response.data.data.size
+      };
+    }
+    
+    // 기존 구조: {data: {reviews: [...], total: 5, page: 1, size: 10}}
+    if (response.data && response.data.reviews) {
+      console.log('getReviews 성공 - 기존 구조 응답:', response.data.reviews);
       return {
         reviews: response.data.reviews.map(mapReviewResponse),
         total: response.data.total,
@@ -82,6 +98,8 @@ export async function getReviews(): Promise<{reviews: Review[], total: number, p
         size: response.data.size
       };
     }
+    
+    console.log('getReviews 실패 - 지원되지 않는 응답 구조');
     return null;
   } catch (error) {
     console.error('후기 목록을 가져오는데 실패했습니다:', error);

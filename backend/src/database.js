@@ -31,6 +31,21 @@ export class DatabaseOptimizer {
       // Turso HTTP API 사용
       const httpUrl = this.env.DATABASE_URL.replace('libsql://', 'https://');
       
+      // Turso HTTP API 형식에 맞게 파라미터 변환
+      const tursoParams = params.map(param => {
+        if (param === null || param === undefined) {
+          return { type: 'null' };
+        } else if (typeof param === 'string') {
+          return { type: 'text', value: param };
+        } else if (typeof param === 'number') {
+          return { type: 'integer', value: param };
+        } else if (typeof param === 'boolean') {
+          return { type: 'integer', value: param ? 1 : 0 };
+        } else {
+          return { type: 'text', value: String(param) };
+        }
+      });
+
       const response = await fetch(`${httpUrl}/v1/execute`, {
         method: 'POST',
         headers: {
@@ -40,7 +55,7 @@ export class DatabaseOptimizer {
         body: JSON.stringify({
           stmt: {
             sql: sql,
-            args: params
+            args: tursoParams
           }
         })
       });

@@ -9,7 +9,7 @@ const nextConfig = {
   
   // 환경 변수 설정
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://sw-healing-api.hozza94.workers.dev',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787',
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || '수원 힐링 상담센터'
   }
 };

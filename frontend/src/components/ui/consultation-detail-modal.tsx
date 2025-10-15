@@ -9,10 +9,14 @@ interface ConsultationDetail {
   id: number;
   user_name: string;
   counselor_name: string;
-  consultation_date: string;
-  consultation_time: string;
+  scheduled_at: string;  // 백엔드 필드명과 일치
   consultation_type: string;
+  consultation_type_ko?: string;  // 한국어 매핑 추가
+  urgency_level?: string;
+  urgency_level_ko?: string;  // 한국어 매핑 추가
   status: string;
+  status_ko?: string;  // 한국어 매핑 추가
+  status_color?: string;  // 상태 색상 추가
   created_at: string;
   user_phone?: string;
   user_email?: string;
@@ -26,52 +30,117 @@ interface ConsultationDetailModalProps {
   consultation: ConsultationDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStatusChange?: (consultationId: number, newStatus: string) => void;
 }
 
-export function ConsultationDetailModal({ consultation, open, onOpenChange }: ConsultationDetailModalProps) {
+export function ConsultationDetailModal({ consultation, open, onOpenChange, onStatusChange }: ConsultationDetailModalProps) {
   if (!consultation) return null;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
-  const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatTime = (dateString: string) => {
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REVIEWING':
+        return 'bg-blue-100 text-blue-800';
+      case 'CONFIRMED':
+        return 'bg-green-100 text-green-800';
+      case 'SCHEDULED':
+        return 'bg-purple-100 text-purple-800';
+      case 'IN_PROGRESS':
+        return 'bg-orange-100 text-orange-800';
+      case 'COMPLETED':
+        return 'bg-gray-100 text-gray-800';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'reviewing':
+        return 'bg-blue-100 text-blue-800';
       case 'confirmed':
         return 'bg-green-100 text-green-800';
+      case 'scheduled':
+        return 'bg-purple-100 text-purple-800';
+      case 'in_progress':
+        return 'bg-orange-100 text-orange-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusText = (status: string) => {
+    const getStatusText = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return '대기중';
+      case 'REVIEWING':
+        return '검토중';
+      case 'CONFIRMED':
+        return '수락됨';
+      case 'SCHEDULED':
+        return '일정확정';
+      case 'IN_PROGRESS':
+        return '진행중';
+      case 'COMPLETED':
+        return '완료됨';
+      case 'CANCELLED':
+        return '취소됨';
+      case 'REJECTED':
+        return '거절됨';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return '대기중';
+      case 'reviewing':
+        return '검토중';
       case 'confirmed':
-        return '확정됨';
-      case 'cancelled':
-        return '취소됨';
+        return '수락됨';
+      case 'scheduled':
+        return '일정확정';
+      case 'in_progress':
+        return '진행중';
       case 'completed':
         return '완료됨';
+      case 'cancelled':
+        return '취소됨';
+      case 'rejected':
+        return '거절됨';
       default:
         return status;
     }
@@ -99,21 +168,21 @@ export function ConsultationDetailModal({ consultation, open, onOpenChange }: Co
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-blue-700 font-medium">상담 날짜</p>
-                <p className="text-blue-900">{formatDate(consultation.consultation_date)}</p>
+                <p className="text-blue-900">{formatDate(consultation.scheduled_at)}</p>
               </div>
               <div>
                 <p className="text-sm text-blue-700 font-medium">상담 시간</p>
-                <p className="text-blue-900">{formatTime(consultation.consultation_time)}</p>
+                <p className="text-blue-900">{formatTime(consultation.scheduled_at)}</p>
               </div>
             </div>
             <div className="mt-3">
               <p className="text-sm text-blue-700 font-medium">상담 유형</p>
-              <p className="text-blue-900">{consultation.consultation_type}</p>
+              <p className="text-blue-900">{consultation.consultation_type_ko || consultation.consultation_type}</p>
             </div>
             <div className="mt-3">
               <p className="text-sm text-blue-700 font-medium">상태</p>
               <Badge className={getStatusColor(consultation.status)}>
-                {getStatusText(consultation.status)}
+                {consultation.status_ko || getStatusText(consultation.status)}
               </Badge>
             </div>
           </div>
@@ -207,10 +276,103 @@ export function ConsultationDetailModal({ consultation, open, onOpenChange }: Co
         </div>
 
         <div className="bg-gray-50 p-6 -m-6 mt-6 border-t border-gray-200 flex-shrink-0">
+          {/* 상태 변경 액션 버튼들 */}
+          {consultation.status === 'REVIEWING' && onStatusChange && (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'CONFIRMED')}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                ✅ 수락
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'REJECTED')}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                ❌ 거절
+              </Button>
+            </div>
+          )}
+          
+          {consultation.status === 'PENDING' && onStatusChange && (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'REVIEWING')}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                🔍 검토 시작
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'REJECTED')}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                ❌ 거절
+              </Button>
+            </div>
+          )}
+
+          {consultation.status === 'CONFIRMED' && onStatusChange && (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'SCHEDULED')}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                📅 일정 확정
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'CANCELLED')}
+                variant="destructive"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                ⏹️ 취소
+              </Button>
+            </div>
+          )}
+
+          {consultation.status === 'SCHEDULED' && onStatusChange && (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'IN_PROGRESS')}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                ▶️ 상담 시작
+              </Button>
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'CANCELLED')}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                ⏹️ 취소
+              </Button>
+            </div>
+          )}
+
+          {consultation.status === 'IN_PROGRESS' && onStatusChange && (
+            <div className="mb-4">
+              <Button 
+                type="button" 
+                onClick={() => onStatusChange(consultation.id, 'COMPLETED')}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                ✅ 상담 완료
+              </Button>
+            </div>
+          )}
+
           <Button 
             type="button" 
             onClick={() => onOpenChange(false)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full bg-gray-500 hover:bg-gray-600 text-white"
           >
             닫기
           </Button>

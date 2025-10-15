@@ -18,8 +18,15 @@ name = "dev-sw-healing-api"
 [env.development.vars]
 CORS_ORIGINS = "https://develop-sw-healing.pages.dev,http://localhost:3000"
 DATABASE_URL = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
+DATABASE_AUTH_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NTE5YTM5Zi1kZTc5LTQxNGYtOTA0ZC1kOGI2NDliMDZmN2MiLCJpYXQiOjE3NTQ0NDMzOTksInJpZCI6IjA5OGQzZTNhLWE0OWMtNGQ0NC04MGIxLWVjOTM3MzY4YjQ5MSJ9.FZgSEU3NZJj7lhaLHfnNg6KxoLUGO9u9MLsa9nLI3HBCKVf6Ke1O4-m0WMs_CQdtcLEAYL3xNIID8E8HnRqzAA"
 LOG_LEVEL = "DEBUG"
 ENVIRONMENT = "development"
+
+# 개발 환경 KV 네임스페이스
+[[env.development.kv_namespaces]]
+binding = "CACHE"
+id = "your-dev-kv-namespace-id" # 실제 개발용 KV ID로 교체 필요
+preview_id = "your-dev-preview-kv-namespace-id" # 실제 개발용 Preview KV ID로 교체 필요
 
 [env.production]
 name = "sw-healing-api"
@@ -27,5 +34,6 @@ name = "sw-healing-api"
 [env.production.vars]
 CORS_ORIGINS = "https://sw-healing.pages.dev,https://app.suwon-healing.com"
 DATABASE_URL = "libsql://swhealing-hozza.aws-ap-northeast-1.turso.io"
+DATABASE_AUTH_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NTE5YTM5Zi1kZTc5LTQxNGYtOTA0ZC1kOGI2NDliMDZmN2MiLCJpYXQiOjE3NTQ0NDMzOTksInJpZCI6IjA5OGQzZTNhLWE0OWMtNGQ0NC04MGIxLWVjOTM3MzY4YjQ5MSJ9.FZgSEU3NZJj7lhaLHfnNg6KxoLUGO9u9MLsa9nLI3HBCKVf6Ke1O4-m0WMs_CQdtcLEAYL3xNIID8E8HnRqzAA"
 LOG_LEVEL = "INFO"
 ENVIRONMENT = "production"

@@ -90,15 +90,44 @@ NEXT_PUBLIC_APP_NAME=수원 힐링 상담센터
 ```
 
 ### 4. 개발 서버 실행
+
+#### 🚀 간편 실행 (권장)
+```bash
+# Linux/Mac
+./start-dev.sh
+
+# Windows
+start-dev.bat
+```
+
+#### 📋 개별 실행
 ```bash
 # 프론트엔드 개발 서버
+cd frontend
 npm run dev
 # http://localhost:3000
 
 # 백엔드 개발 서버
 cd backend
-wrangler dev
+wrangler dev --env development
 # http://localhost:8787
+```
+
+#### 📊 로그 확인
+```bash
+# Linux/Mac - 로그 뷰어 사용
+./view-logs.sh
+
+# 또는 직접 로그 파일 확인
+tail -f logs/backend.log    # 백엔드 로그
+tail -f logs/frontend.log   # 프론트엔드 로그
+
+# Windows - 로그 뷰어 사용
+view-logs.bat
+
+# 또는 PowerShell로 직접 확인
+Get-Content logs\backend.log -Wait -Tail 50
+Get-Content logs\frontend.log -Wait -Tail 50
 ```
 
 ## 📊 데이터베이스

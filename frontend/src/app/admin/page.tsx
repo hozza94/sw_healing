@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,8 @@ import CounselorForm from '@/components/forms/CounselorForm';
 import { deleteCounselor, updateCounselor, toggleCounselorStatus } from '@/lib/counselors';
 import { ConsultationDetailModal } from '@/components/ui/consultation-detail-modal';
 import { Eye, Calendar, Clock, User, MapPin } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
+import { confirm } from '@/components/ui/confirm-modal';
 
 interface DashboardStats {
   counselors: number;
@@ -23,6 +26,10 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState('counselors');
+  
   const [stats, setStats] = useState<DashboardStats>({
     counselors: 0,
     consultations: 0,
@@ -31,12 +38,32 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // URL에서 탭 정보 읽기
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'counselors';
+    setActiveTab(tab);
+  }, [searchParams]);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
+  // 탭 변경 시 URL 업데이트
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams);
+    if (value === 'counselors') {
+      params.delete('tab');
+    } else {
+      params.set('tab', value);
+    }
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    router.replace(`/admin${newUrl}`, { scroll: false });
+  };
+
   const fetchDashboardData = async () => {
     try {
+      console.log('대시보드 데이터 로딩 시작');
       setLoading(true);
       
       // 임시로 기존 API 사용 (백엔드 서버 재시작 후 새로운 API로 변경)
@@ -54,16 +81,84 @@ export default function AdminDashboard() {
         notices: noticesRes
       }); // 디버깅 로그
 
-      setStats({
+      const newStats = {
         counselors: counselorsRes?.total || 0,
         consultations: consultationsRes?.total || (consultationsRes?.consultations?.length || 0), // total이 없으면 배열 길이 사용
         reviews: reviewsRes?.total || 0,
         notices: noticesRes?.total || 0
-      });
+      };
+
+      console.log('대시보드 통계 업데이트:', newStats);
+      setStats(newStats);
     } catch (error) {
       console.error('대시보드 데이터 로딩 실패:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCounselorSuccess = () => {
+    console.log('handleCounselorSuccess 호출됨 - 목록 새로고침 및 대시보드 업데이트 시작');
+    fetchDashboardData(); // 대시보드 통계도 새로고침
+  };
+
+  const handleDeleteCounselor = async (counselorId: string) => {
+    const confirmed = await confirm(
+      '상담사 삭제',
+      '정말로 이 상담사를 삭제하시겠습니까?\n삭제된 상담사는 복구할 수 없습니다.',
+      {
+        confirmText: '삭제',
+        cancelText: '취소',
+        type: 'danger'
+      }
+    );
+
+    if (confirmed) {
+      try {
+        console.log('상담사 삭제 시작:', counselorId);
+        const result = await deleteCounselor(counselorId);
+        console.log('상담사 삭제 결과:', result);
+        
+        if (result) {
+          fetchDashboardData(); // 대시보드 통계도 새로고침
+          toast.success('상담사 삭제 완료', '상담사가 성공적으로 삭제되었습니다.');
+        } else {
+          toast.error('삭제 실패', '상담사 삭제에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('상담사 삭제 실패:', error);
+        toast.error('삭제 실패', '상담사 삭제에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+  };
+
+  const handleToggleActive = async (counselorId: string, currentStatus: boolean) => {
+    const statusText = currentStatus ? '비활성화' : '활성화';
+    
+    const confirmed = await confirm(
+      `상담사 ${statusText}`,
+      `정말로 이 상담사를 ${statusText}하시겠습니까?`,
+      {
+        confirmText: statusText,
+        cancelText: '취소',
+        type: 'warning'
+      }
+    );
+
+    if (confirmed) {
+      try {
+        const success = await toggleCounselorStatus(counselorId);
+        
+        if (success) {
+          fetchDashboardData(); // 대시보드 통계도 새로고침
+          toast.success(`${statusText} 완료`, `상담사가 ${statusText}되었습니다.`);
+        } else {
+          toast.error(`${statusText} 실패`, `${statusText}에 실패했습니다.`);
+        }
+      } catch (error) {
+        console.error('상담사 상태 변경 실패:', error);
+        toast.error('상태 변경 실패', '상담사 상태 변경에 실패했습니다.');
+      }
     }
   };
 
@@ -87,7 +182,7 @@ export default function AdminDashboard() {
         <p className="text-gray-600">수원 힐링 상담센터 데이터 관리</p>
       </div>
 
-      {/* 통계 카드 */}
+      {/* 통계 카드 - 모든 탭에서 공통으로 표시 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardHeader className="pb-2">
@@ -130,8 +225,8 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-             {/* 데이터 관리 탭 */}
-       <Tabs defaultValue="counselors" className="w-full">
+      {/* 데이터 관리 탭 */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
          <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg h-12">
            <TabsTrigger 
              value="counselors" 
@@ -160,7 +255,11 @@ export default function AdminDashboard() {
          </TabsList>
 
         <TabsContent value="counselors" className="mt-6">
-          <CounselorsTab />
+          <CounselorsTab 
+            onCounselorSuccess={handleCounselorSuccess}
+            onDeleteCounselor={handleDeleteCounselor}
+            onToggleActive={handleToggleActive}
+          />
         </TabsContent>
 
         <TabsContent value="consultations" className="mt-6">
@@ -180,7 +279,11 @@ export default function AdminDashboard() {
 }
 
 // 상담사 관리 탭
-function CounselorsTab() {
+function CounselorsTab({ onCounselorSuccess, onDeleteCounselor, onToggleActive }: {
+  onCounselorSuccess: () => void;
+  onDeleteCounselor: (id: string) => Promise<void>;
+  onToggleActive: (id: string, currentStatus: boolean) => Promise<void>;
+}) {
   const [counselors, setCounselors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -204,42 +307,11 @@ function CounselorsTab() {
   };
 
   const handleCounselorSuccess = () => {
+    console.log('handleCounselorSuccess 호출됨 - 목록 새로고침 시작');
     fetchCounselors(); // 목록 새로고침
+    onCounselorSuccess(); // 부모 컴포넌트의 콜백 호출
   };
 
-  const handleDeleteCounselor = async (counselorId: string) => {
-    if (confirm('정말로 이 상담사를 삭제하시겠습니까?')) {
-      try {
-        await deleteCounselor(counselorId);
-        fetchCounselors(); // 목록 새로고침
-        alert('상담사가 삭제되었습니다.');
-      } catch (error) {
-        console.error('상담사 삭제 실패:', error);
-        alert('상담사 삭제에 실패했습니다.');
-      }
-    }
-  };
-
-  const handleToggleActive = async (counselorId: string, currentStatus: boolean) => {
-    try {
-      const statusText = currentStatus ? '비활성화' : '활성화';
-      
-      if (confirm(`정말로 이 상담사를 ${statusText}하시겠습니까?`)) {
-        // 새로운 toggleCounselorStatus API 사용
-        const success = await toggleCounselorStatus(counselorId);
-        
-        if (success) {
-          alert(`상담사가 ${statusText}되었습니다.`);
-          fetchCounselors(); // 목록 새로고침
-        } else {
-          alert(`${statusText}에 실패했습니다.`);
-        }
-      }
-    } catch (error) {
-      console.error('상담사 상태 변경 실패:', error);
-      alert('상담사 상태 변경에 실패했습니다.');
-    }
-  };
 
   if (loading) {
     return <div className="text-center py-8">상담사 데이터 로딩 중...</div>;
@@ -287,15 +359,23 @@ function CounselorsTab() {
                           ? 'text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700' 
                           : 'text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700'
                       }`}
-                      onClick={() => handleToggleActive(counselor.id, counselor.is_active)}
+                      onClick={() => onToggleActive(counselor.id, counselor.is_active)}
                     >
                       {counselor.is_active ? '비활성화' : '활성화'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 border-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => onDeleteCounselor(counselor.id)}
+                    >
+                      삭제
                     </Button>
                   </div>
                   <div className="text-right">
                     <Badge 
                       variant={counselor.is_active ? "default" : "secondary"}
-                      onClick={() => handleToggleActive(counselor.id, counselor.is_active)}
+                      onClick={() => onToggleActive(counselor.id, counselor.is_active)}
                       className="cursor-pointer hover:bg-blue-500 transition-colors"
                     >
                       {counselor.is_active ? '활성' : '비활성'}
@@ -329,7 +409,16 @@ function ConsultationsTab() {
       console.log('상담신청 API 응답:', response); // 디버깅 로그
       console.log('상담신청 배열:', response?.consultations); // 디버깅 로그
       // getConsultations는 {consultations: [...], total: 5, page: 1, size: 10} 형태로 반환
-      setConsultations(response?.consultations || []);
+      const consultations = response?.consultations || [];
+      console.log('설정할 상담신청 데이터:', consultations);
+      consultations.forEach((consultation, index) => {
+        console.log(`상담신청 ${index + 1}:`, {
+          id: consultation.id,
+          scheduled_at: consultation.scheduled_at,
+          scheduled_at_type: typeof consultation.scheduled_at
+        });
+      });
+      setConsultations(consultations);
     } catch (error) {
       console.error('상담 신청 데이터 로딩 실패:', error);
     } finally {
@@ -342,16 +431,67 @@ function ConsultationsTab() {
     setDetailModalOpen(true);
   };
 
+  const handleConsultationStatusChange = async (consultationId: number, newStatus: string) => {
+    try {
+      console.log('상담 신청 상태 변경 시작:', { consultationId, newStatus });
+      
+      // 상태 변경 API 호출
+      const response = await apiClient.patch(`/api/consultations/${consultationId}`, {
+        status: newStatus
+      });
+      
+      if (response.data && response.data.success) {
+        toast.success(`상담 신청 상태가 "${getStatusText(newStatus)}"로 변경되었습니다.`);
+        
+        // 상담 신청 목록 새로고침
+        await fetchConsultations();
+        
+        // 모달 닫기
+        setDetailModalOpen(false);
+      } else {
+        toast.error('상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('상담 신청 상태 변경 실패:', error);
+      toast.error('상태 변경 중 오류가 발생했습니다.');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REVIEWING':
+        return 'bg-blue-100 text-blue-800';
+      case 'CONFIRMED':
+        return 'bg-green-100 text-green-800';
+      case 'SCHEDULED':
+        return 'bg-purple-100 text-purple-800';
+      case 'IN_PROGRESS':
+        return 'bg-orange-100 text-orange-800';
+      case 'COMPLETED':
+        return 'bg-gray-100 text-gray-800';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'reviewing':
+        return 'bg-blue-100 text-blue-800';
       case 'confirmed':
         return 'bg-green-100 text-green-800';
+      case 'scheduled':
+        return 'bg-purple-100 text-purple-800';
+      case 'in_progress':
+        return 'bg-orange-100 text-orange-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -359,28 +499,85 @@ function ConsultationsTab() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return '대기중';
+      case 'REVIEWING':
+        return '검토중';
+      case 'CONFIRMED':
+        return '수락됨';
+      case 'SCHEDULED':
+        return '일정확정';
+      case 'IN_PROGRESS':
+        return '진행중';
+      case 'COMPLETED':
+        return '완료됨';
+      case 'CANCELLED':
+        return '취소됨';
+      case 'REJECTED':
+        return '거절됨';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return '대기중';
+      case 'reviewing':
+        return '검토중';
       case 'confirmed':
-        return '확정됨';
-      case 'cancelled':
-        return '취소됨';
+        return '수락됨';
+      case 'scheduled':
+        return '일정확정';
+      case 'in_progress':
+        return '진행중';
       case 'completed':
         return '완료됨';
+      case 'cancelled':
+        return '취소됨';
+      case 'rejected':
+        return '거절됨';
       default:
         return status;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR');
+    console.log('formatDate 호출:', { dateString, type: typeof dateString });
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.log('Invalid date:', dateString);
+        return 'Invalid Date';
+      }
+      const result = date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      console.log('formatDate 결과:', result);
+      return result;
+    } catch (error) {
+      console.error('formatDate 오류:', error);
+      return 'Invalid Date';
+    }
   };
 
-  const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatTime = (dateString: string) => {
+    console.log('formatTime 호출:', { dateString, type: typeof dateString });
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.log('Invalid time:', dateString);
+        return 'Invalid Date';
+      }
+      const result = date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      console.log('formatTime 결과:', result);
+      return result;
+    } catch (error) {
+      console.error('formatTime 오류:', error);
+      return 'Invalid Date';
+    }
   };
 
   if (loading) {
@@ -418,7 +615,7 @@ function ConsultationsTab() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <Badge className={getStatusColor(consultation.status)}>
-                        {getStatusText(consultation.status)}
+                        {consultation.status_ko || getStatusText(consultation.status)}
                       </Badge>
                       <span className="text-sm text-gray-500">#{consultation.id}</span>
                     </div>
@@ -442,7 +639,7 @@ function ConsultationsTab() {
                         <MapPin className="w-4 h-4 text-gray-500" />
                         <div>
                           <p className="text-sm text-gray-500">상담 유형</p>
-                          <p className="font-medium">{consultation.consultation_type}</p>
+                          <p className="font-medium">{consultation.consultation_type_ko || consultation.consultation_type}</p>
                         </div>
                       </div>
                     </div>
@@ -500,6 +697,7 @@ function ConsultationsTab() {
         consultation={selectedConsultation}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        onStatusChange={handleConsultationStatusChange}
       />
     </div>
   );

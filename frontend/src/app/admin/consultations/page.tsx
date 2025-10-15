@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConsultationDetailModal } from '@/components/ui/consultation-detail-modal';
 import { Eye, Calendar, Clock, User, MapPin } from 'lucide-react';
+import { apiClient } from '@/lib/api';
+import { toast } from '@/components/ui/toast';
 
 interface Consultation {
   id: number;
@@ -16,10 +18,14 @@ interface Consultation {
   counselor_specialization?: string;
   counselor_phone?: string;
   counselor_email?: string;
-  consultation_date: string;
-  consultation_time: string;
+  scheduled_at: string;  // 백엔드 필드명과 일치
   consultation_type: string;
+  consultation_type_ko?: string;  // 한국어 매핑 추가
+  urgency_level?: string;
+  urgency_level_ko?: string;  // 한국어 매핑 추가
   status: string;
+  status_ko?: string;  // 한국어 매핑 추가
+  status_color?: string;  // 상태 색상 추가
   notes?: string;
   created_at: string;
 }
@@ -56,16 +62,68 @@ export default function AdminConsultationsPage() {
     setDetailModalOpen(true);
   };
 
+  const handleConsultationStatusChange = async (consultationId: number, newStatus: string) => {
+    try {
+      console.log('상담 신청 상태 변경 시작:', { consultationId, newStatus });
+      
+      // 상태 변경 API 호출
+      const response = await apiClient.patch(`/api/consultations/${consultationId}`, {
+        status: newStatus
+      });
+      
+      if (response.data && response.data.success) {
+        const statusText = getStatusText(newStatus);
+        toast.success(`상담 신청 상태가 "${statusText}"로 변경되었습니다.`);
+        
+        // 상담 신청 목록 새로고침
+        await fetchConsultations();
+        
+        // 모달 닫기
+        setDetailModalOpen(false);
+      } else {
+        toast.error('상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('상담 신청 상태 변경 실패:', error);
+      toast.error('상태 변경 중 오류가 발생했습니다.');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'REVIEWING':
+        return 'bg-blue-100 text-blue-800';
+      case 'CONFIRMED':
+        return 'bg-green-100 text-green-800';
+      case 'SCHEDULED':
+        return 'bg-purple-100 text-purple-800';
+      case 'IN_PROGRESS':
+        return 'bg-orange-100 text-orange-800';
+      case 'COMPLETED':
+        return 'bg-gray-100 text-gray-800';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'reviewing':
+        return 'bg-blue-100 text-blue-800';
       case 'confirmed':
         return 'bg-green-100 text-green-800';
+      case 'scheduled':
+        return 'bg-purple-100 text-purple-800';
+      case 'in_progress':
+        return 'bg-orange-100 text-orange-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -73,28 +131,71 @@ export default function AdminConsultationsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'PENDING':
+        return '대기중';
+      case 'REVIEWING':
+        return '검토중';
+      case 'CONFIRMED':
+        return '수락됨';
+      case 'SCHEDULED':
+        return '일정확정';
+      case 'IN_PROGRESS':
+        return '진행중';
+      case 'COMPLETED':
+        return '완료됨';
+      case 'CANCELLED':
+        return '취소됨';
+      case 'REJECTED':
+        return '거절됨';
+      // 소문자 버전도 지원 (기존 데이터 호환성)
       case 'pending':
         return '대기중';
+      case 'reviewing':
+        return '검토중';
       case 'confirmed':
-        return '확정됨';
-      case 'cancelled':
-        return '취소됨';
+        return '수락됨';
+      case 'scheduled':
+        return '일정확정';
+      case 'in_progress':
+        return '진행중';
       case 'completed':
         return '완료됨';
+      case 'cancelled':
+        return '취소됨';
+      case 'rejected':
+        return '거절됨';
       default:
         return status;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR');
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
-  const formatTime = (timeString: string) => {
-    return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatTime = (dateString: string) => {
+    if (!dateString || dateString === 'null') return '미정';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   if (loading) {
@@ -171,7 +272,7 @@ export default function AdminConsultationsPage() {
                     <MapPin className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">상담 유형</p>
-                      <p className="font-medium">{consultation.consultation_type}</p>
+                      <p className="font-medium">{consultation.consultation_type_ko || consultation.consultation_type}</p>
                     </div>
                   </div>
                 </div>
@@ -180,14 +281,14 @@ export default function AdminConsultationsPage() {
                     <Calendar className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">상담 날짜</p>
-                      <p className="font-medium">{formatDate(consultation.consultation_date)}</p>
+                      <p className="font-medium">{formatDate(consultation.scheduled_at)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">상담 시간</p>
-                      <p className="font-medium">{formatTime(consultation.consultation_time)}</p>
+                      <p className="font-medium">{formatTime(consultation.scheduled_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -212,6 +313,7 @@ export default function AdminConsultationsPage() {
         consultation={selectedConsultation}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        onStatusChange={handleConsultationStatusChange}
       />
     </div>
   );

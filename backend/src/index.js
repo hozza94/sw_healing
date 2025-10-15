@@ -71,8 +71,8 @@ export default {
     // CORS 헤더 설정
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma, Expires',
     };
 
     // 성능 최적화 헤더
@@ -111,10 +111,25 @@ export default {
       if (path === '/api/health') {
         response = handleHealth(request, corsHeaders);
       } else if (path === '/api/counselors') {
+        if (request.method === 'GET') {
         response = await handleCounselors(request, env, corsHeaders);
+        } else if (request.method === 'POST') {
+          response = await handleCreateCounselor(request, env, corsHeaders);
+        }
       } else if (path.startsWith('/api/counselors/')) {
-        const id = path.split('/')[3];
+          const pathParts = path.split('/');
+          const id = pathParts[3];
+          const action = pathParts[4];
+          
+          if (action === 'toggle-status') {
+            response = await handleToggleCounselorStatus(request, env, corsHeaders, id);
+          } else if (request.method === 'DELETE') {
+            response = await handleDeleteCounselor(request, env, corsHeaders, id);
+          } else if (request.method === 'PUT') {
+            response = await handleUpdateCounselor(request, env, corsHeaders, id);
+          } else {
         response = await handleCounselorById(request, env, corsHeaders, id);
+          }
       } else if (path === '/api/notices') {
         response = await handleNotices(request, env, corsHeaders);
       } else if (path.startsWith('/api/notices/')) {
@@ -127,6 +142,13 @@ export default {
         response = await handleReviewById(request, env, corsHeaders, id);
       } else if (path === '/api/consultations') {
         response = await handleConsultations(request, env, corsHeaders);
+      } else if (path.startsWith('/api/consultations/')) {
+        const id = path.split('/')[3];
+        if (request.method === 'PATCH') {
+          response = await handleUpdateConsultationStatus(request, env, corsHeaders, id);
+        } else {
+          response = await handleConsultationById(request, env, corsHeaders, id);
+        }
       } else if (path === '/openapi.json') {
         response = handleOpenAPI(request, corsHeaders);
       } else if (path === '/docs' || path === '/api-docs') {
@@ -187,18 +209,18 @@ async function handleCounselors(request, env, corsHeaders) {
   const startTime = Date.now();
   
   try {
-    // 캐시에서 조회 시도
-    const cachedCounselors = await getCachedCounselors(cache);
-    if (cachedCounselors) {
-      const responseTime = Date.now() - startTime;
-      logger.info('Counselors served from cache', {
-        count: cachedCounselors.counselors.length,
-        responseTime: `${responseTime}ms`,
-        source: 'cache'
-      });
-      
-      return createSuccessResponse(cachedCounselors, HTTP_STATUS.OK, corsHeaders);
-    }
+    // 캐시 완전 비활성화 - 항상 데이터베이스에서 조회
+    // const cachedCounselors = await getCachedCounselors(cache);
+    // if (cachedCounselors) {
+    //   const responseTime = Date.now() - startTime;
+    //   logger.info('Counselors served from cache', {
+    //     count: cachedCounselors.counselors.length,
+    //     responseTime: `${responseTime}ms`,
+    //     source: 'cache'
+    //   });
+    //   
+    //   return createSuccessResponse(cachedCounselors, HTTP_STATUS.OK, corsHeaders);
+    // }
 
     logger.debug('Fetching counselors from database (optimized)', {
       hasDatabaseUrl: !!env.DATABASE_URL,
@@ -208,15 +230,17 @@ async function handleCounselors(request, env, corsHeaders) {
     // 최적화된 데이터베이스 쿼리 사용
     const counselors = await db.getCounselors(true);
 
+    // 모든 데이터 정리 (Turso null 객체 처리)
+    const cleanedCounselors = cleanTursoData(counselors);
+
     const responseData = {
-      counselors: counselors,
-      total: counselors.length,
+      counselors: cleanedCounselors,
+      total: cleanedCounselors.length,
       page: 1,
-      size: counselors.length
+      size: cleanedCounselors.length
     };
 
-    // 캐시에 저장
-    await cacheCounselors(cache, responseData);
+    // 캐시 완전 비활성화
 
     const responseTime = Date.now() - startTime;
     
@@ -251,113 +275,423 @@ async function handleCounselors(request, env, corsHeaders) {
   }
 }
 
+// 상담사 생성
+async function handleCreateCounselor(request, env, corsHeaders) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    const body = await request.json();
+    
+    logger.debug('Creating new counselor', {
+      hasName: !!body.name,
+      hasEmail: !!body.email,
+      hasSpecialization: !!body.specialization
+    });
+    
+    // 입력 검증
+    validateRequired(body.name, 'name');
+    validateRequired(body.email, 'email');
+    validateRequired(body.specialization, 'specialization');
+    validateRequired(body.experience, 'experience');
+    validateRequired(body.education, 'education');
+    validateRequired(body.bio, 'bio');
+    
+    validateEmail(body.email);
+    
+    if (body.phone) {
+      validatePhone(body.phone);
+    }
+    
+    logger.info('Validation passed for counselor creation', {
+      name: body.name,
+      email: body.email,
+      specialization: body.specialization
+    });
+    
+    // 실제 데이터베이스에 상담사 생성
+    const sql = `INSERT INTO counselors 
+      (name, email, phone, specialization, education, experience, certification, bio, profile_image, is_online, is_active, rating, total_reviews, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0, 0, datetime('now'), datetime('now'))`;
+    
+    const params = [
+      body.name,
+      body.email,
+      body.phone || '',
+      body.specialization,
+      body.education,
+      body.experience,
+      body.certification || '',
+      body.bio,
+      body.profile_image || null
+    ];
+    
+    await db.executeQuery(sql, params);
+    
+    // 생성된 상담사 ID 조회
+    const result = await db.executeQuery('SELECT last_insert_rowid() as id');
+    const newCounselorId = result[0].id;
+    
+    // 캐시 완전 비활성화
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Counselor created successfully in database', {
+      counselorId: newCounselorId,
+      name: body.name,
+      responseTime: `${responseTime}ms`,
+      cacheInvalidated: true
+    });
+    
+    return createSuccessResponse({
+      id: newCounselorId,
+      message: '상담사가 성공적으로 추가되었습니다.'
+    }, HTTP_STATUS.CREATED, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    if (error instanceof ValidationError) {
+      logger.warn('Validation failed for counselor creation', {
+        error: error.message,
+        responseTime: `${responseTime}ms`
+      });
+      throw error;
+    }
+    
+    logger.error('Unexpected error in counselor creation', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    throw new ValidationError('Invalid request data', { originalError: error.message });
+  }
+}
+
+// 상담사 삭제
+async function handleDeleteCounselor(request, env, corsHeaders, id) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    logger.debug('Deleting counselor', { counselorId: id });
+    
+    // 입력 검증
+    validateId(id, 'counselor');
+    
+    // 상담사 삭제 (실제로는 is_active를 false로 설정하는 것이 좋지만, 요청에 따라 완전 삭제)
+    const sql = 'DELETE FROM counselors WHERE id = ?';
+    const params = [id];
+    
+    await db.executeQuery(sql, params);
+    
+    // 캐시 완전 비활성화
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Counselor deleted successfully', {
+      counselorId: id,
+      responseTime: `${responseTime}ms`,
+      cacheInvalidated: true
+    });
+    
+    return createSuccessResponse({
+      message: '상담사가 성공적으로 삭제되었습니다.'
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    if (error instanceof ValidationError) {
+      logger.warn('Validation failed for counselor deletion', {
+        error: error.message,
+        responseTime: `${responseTime}ms`
+      });
+      throw error;
+    }
+    
+    logger.error('Unexpected error in counselor deletion', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    throw new ValidationError('Invalid request data', { originalError: error.message });
+  }
+}
+
+// 상담사 수정
+async function handleUpdateCounselor(request, env, corsHeaders, id) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    const body = await request.json();
+    
+    logger.debug('Updating counselor', { counselorId: id });
+    
+    // 입력 검증
+    validateId(id, 'counselor');
+    validateRequired(body.name, 'name');
+    validateRequired(body.email, 'email');
+    validateRequired(body.specialization, 'specialization');
+    validateRequired(body.experience, 'experience');
+    validateRequired(body.education, 'education');
+    validateRequired(body.bio, 'bio');
+    
+    validateEmail(body.email);
+    
+    if (body.phone) {
+      validatePhone(body.phone);
+    }
+    
+    // 상담사 존재 확인
+    const existingCounselor = await db.executeQuery('SELECT id FROM counselors WHERE id = ?', [id]);
+    if (existingCounselor.length === 0) {
+      throw new ValidationError('Counselor not found');
+    }
+    
+    // 상담사 정보 업데이트
+    const sql = `UPDATE counselors SET 
+      name = ?, email = ?, phone = ?, specialization = ?, education = ?, 
+      experience = ?, certification = ?, bio = ?, profile_image = ?, 
+      updated_at = datetime('now')
+      WHERE id = ?`;
+    
+    const params = [
+      body.name,
+      body.email,
+      body.phone || '',
+      body.specialization,
+      body.education,
+      body.experience,
+      body.certification || '',
+      body.bio,
+      body.profile_image || null,
+      id
+    ];
+    
+    await db.executeQuery(sql, params);
+    
+    // 캐시 완전 비활성화
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Counselor updated successfully', {
+      counselorId: id,
+      name: body.name,
+      responseTime: `${responseTime}ms`
+    });
+    
+    return createSuccessResponse({
+      message: '상담사 정보가 성공적으로 수정되었습니다.'
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    if (error instanceof ValidationError) {
+      logger.warn('Validation failed for counselor update', {
+        error: error.message,
+        responseTime: `${responseTime}ms`
+      });
+      throw error;
+    }
+    
+    logger.error('Unexpected error in counselor update', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    throw new ValidationError('Invalid request data', { originalError: error.message });
+  }
+}
+
+// 상담사 상태 토글
+async function handleToggleCounselorStatus(request, env, corsHeaders, id) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    logger.debug('Toggling counselor status', { counselorId: id });
+    
+    // 입력 검증
+    validateId(id, 'counselor');
+    
+    // 현재 상태 조회
+    const currentStatus = await db.executeQuery('SELECT is_active FROM counselors WHERE id = ?', [id]);
+    if (currentStatus.length === 0) {
+      throw new ValidationError('Counselor not found');
+    }
+    
+    const newStatus = currentStatus[0].is_active ? 0 : 1;
+    
+    // 상태 업데이트
+    const sql = 'UPDATE counselors SET is_active = ?, updated_at = datetime("now") WHERE id = ?';
+    const params = [newStatus, id];
+    
+    await db.executeQuery(sql, params);
+    
+    // 캐시 완전 비활성화
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Counselor status toggled successfully', {
+      counselorId: id,
+      oldStatus: currentStatus[0].is_active,
+      newStatus: newStatus,
+      responseTime: `${responseTime}ms`,
+      cacheInvalidated: true
+    });
+    
+    return createSuccessResponse({
+      message: `상담사가 ${newStatus ? '활성화' : '비활성화'}되었습니다.`,
+      is_active: newStatus
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    if (error instanceof ValidationError) {
+      logger.warn('Validation failed for counselor status toggle', {
+        error: error.message,
+        responseTime: `${responseTime}ms`
+      });
+      throw error;
+    }
+    
+    logger.error('Unexpected error in counselor status toggle', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    throw new ValidationError('Invalid request data', { originalError: error.message });
+  }
+}
+
 // 특정 상담사
 async function handleCounselorById(request, env, corsHeaders, id) {
-  const sampleCounselors = [
-    {
-      id: 1,
-      name: "김상담",
-      email: "counselor1@suwon-healing.com",
-      phone: "010-1000-1000",
-      specialization: "개인상담",
-      education: "서울대학교 심리학과 졸업",
-      experience: "10년",
-      bio: "따뜻하고 전문적인 상담을 제공합니다.",
-      profile_image: "/images/counselor1.jpg",
-      is_online: true,
-      is_active: true,
-      rating: 4.8,
-      total_reviews: 25,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    {
-      id: 2,
-      name: "이치유",
-      email: "counselor2@suwon-healing.com",
-      phone: "010-2000-2000",
-      specialization: "부부상담",
-      education: "연세대학교 상담심리학과 졸업",
-      experience: "8년",
-      bio: "부부 관계 개선을 위한 전문적인 상담을 제공합니다.",
-      profile_image: "/images/counselor2.jpg",
-      is_online: true,
-      is_active: true,
-      rating: 4.9,
-      total_reviews: 30,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    {
-      id: 3,
-      name: "박마음",
-      email: "counselor3@suwon-healing.com",
-      phone: "010-3000-3000",
-      specialization: "청소년상담",
-      education: "고려대학교 아동심리학과 졸업",
-      experience: "12년",
-      bio: "청소년의 마음을 이해하고 성장을 돕습니다.",
-      profile_image: "/images/counselor3.jpg",
-      is_online: false,
-      is_active: true,
-      rating: 4.7,
-      total_reviews: 20,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    }
-  ];
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
   
-  const counselor = sampleCounselors.find(c => c.id == id);
-  
-  if (!counselor) {
+  try {
+    logger.debug('Fetching counselor by ID from database', { counselorId: id });
+    
+    // 실제 데이터베이스에서 특정 상담사 조회
+    const counselors = await db.executeQuery(`
+      SELECT 
+        id, name, email, phone, specialization, education, experience, 
+        certification, bio, profile_image, is_online, is_active, 
+        rating, total_reviews, created_at, updated_at
+      FROM counselors 
+      WHERE id = ? AND is_active = 1
+    `, [id]);
+    
+    if (counselors.length === 0) {
     return new Response(JSON.stringify({ error: 'Counselor not found' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 
-  return new Response(JSON.stringify(counselor), {
+    const counselor = counselors[0];
+    
+    // 모든 데이터 정리 (Turso null 객체 처리)
+    const cleanedCounselor = cleanTursoData(counselor);
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Successfully fetched counselor by ID from database', {
+      counselorId: id,
+      counselorName: cleanedCounselor.name,
+      responseTime: `${responseTime}ms`,
+      source: 'database'
+    });
+
+    return new Response(JSON.stringify(cleanedCounselor), {
     status: 200,
     headers: { 'Content-Type': 'application/json', ...corsHeaders },
   });
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to fetch counselor by ID from database', {
+      counselorId: id,
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+  });
+  }
 }
 
 // 공지사항 목록
 async function handleNotices(request, env, corsHeaders) {
-  const sampleNotices = [
-    {
-      id: 1,
-      title: "수원 힐링 상담센터 오픈 안내",
-      content: "수원 힐링 상담센터가 정식으로 오픈했습니다. 전문 상담사들과 함께 마음의 치유를 시작해보세요.",
-      notice_type: "important",
-      status: "published",
-      is_pinned: true,
-      view_count: 150,
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    {
-      id: 2,
-      title: "새로운 상담사 영입",
-      content: "청소년 상담 전문가 박마음 상담사가 팀에 합류했습니다.",
-      notice_type: "general",
-      status: "published",
-      is_pinned: false,
-      view_count: 75,
-      created_at: "2024-01-02T00:00:00Z",
-      updated_at: "2024-01-02T00:00:00Z"
-    }
-  ];
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
   
-  return new Response(JSON.stringify({
-    notices: sampleNotices,
-    total: sampleNotices.length,
+  try {
+    logger.debug('Fetching notices from database');
+    
+    // 실제 데이터베이스에서 공지사항 목록 조회
+    const notices = await db.executeQuery(`
+      SELECT 
+        id, title, content, notice_type, status, is_pinned, is_active, 
+        view_count, created_at, updated_at
+      FROM notices 
+      WHERE is_active = 1
+      ORDER BY is_pinned DESC, created_at DESC
+    `);
+    
+    // 모든 데이터 정리 (Turso null 객체 처리)
+    const cleanedNotices = cleanTursoData(notices);
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Successfully fetched notices from database', {
+      count: cleanedNotices.length,
+      responseTime: `${responseTime}ms`,
+      source: 'database'
+    });
+    
+    return createSuccessResponse({
+      notices: cleanedNotices,
+      total: cleanedNotices.length,
     page: 1,
-    size: sampleNotices.length
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+      size: cleanedNotices.length
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to fetch notices from database', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    // 오류 발생 시 빈 배열 반환
+    return createSuccessResponse({
+      notices: [],
+      total: 0,
+      page: 1,
+      size: 0
+    }, HTTP_STATUS.OK, corsHeaders);
+  }
 }
 
 // 특정 공지사항
@@ -404,50 +738,60 @@ async function handleNoticeById(request, env, corsHeaders, id) {
 
 // 리뷰 목록
 async function handleReviews(request, env, corsHeaders) {
-  const sampleReviews = [
-    {
-      id: 1,
-      user_id: 1,
-      counselor_id: 1,
-      rating: 5,
-      title: "정말 도움이 되었습니다",
-      content: "김상담 선생님의 따뜻한 상담 덕분에 마음이 한결 편해졌습니다. 정말 감사합니다.",
-      is_anonymous: false,
-      is_approved: true,
-      is_active: true,
-      view_count: 10,
-      author_name: "김철수",
-      counselor_name: "김상담",
-      created_at: "2024-01-01T00:00:00Z",
-      updated_at: "2024-01-01T00:00:00Z"
-    },
-    {
-      id: 2,
-      user_id: 2,
-      counselor_id: 2,
-      rating: 4,
-      title: "부부 관계가 개선되었어요",
-      content: "이치유 선생님의 부부 상담 덕분에 서로를 더 잘 이해하게 되었습니다.",
-      is_anonymous: true,
-      is_approved: true,
-      is_active: true,
-      view_count: 8,
-      author_name: "익명",
-      counselor_name: "이치유",
-      created_at: "2024-01-02T00:00:00Z",
-      updated_at: "2024-01-02T00:00:00Z"
-    }
-  ];
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
   
-  return new Response(JSON.stringify({
-    reviews: sampleReviews,
-    total: sampleReviews.length,
+  try {
+    logger.debug('Fetching reviews from database');
+    
+    // 실제 데이터베이스에서 리뷰 목록 조회 (상담사 이름과 함께)
+    const reviews = await db.executeQuery(`
+      SELECT 
+        r.id, r.user_id, r.counselor_id, r.rating, r.title, r.content, 
+        r.is_anonymous, r.is_approved, r.is_active, r.created_at, r.updated_at,
+        c.name as counselor_name
+      FROM reviews r
+      LEFT JOIN counselors c ON r.counselor_id = c.id
+      WHERE r.is_active = 1 AND r.is_approved = 1
+      ORDER BY r.created_at DESC
+    `);
+    
+    // 모든 데이터 정리 (Turso null 객체 처리)
+    const cleanedReviews = cleanTursoData(reviews);
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Successfully fetched reviews from database', {
+      count: cleanedReviews.length,
+      responseTime: `${responseTime}ms`,
+      source: 'database'
+    });
+    
+    return createSuccessResponse({
+      reviews: cleanedReviews,
+      total: cleanedReviews.length,
     page: 1,
-    size: sampleReviews.length
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
-  });
+      size: cleanedReviews.length
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to fetch reviews from database', {
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    // 오류 발생 시 빈 배열 반환
+    return createSuccessResponse({
+      reviews: [],
+      total: 0,
+      page: 1,
+      size: 0
+    }, HTTP_STATUS.OK, corsHeaders);
+  }
 }
 
 // 특정 리뷰
@@ -505,30 +849,63 @@ async function handleReviewById(request, env, corsHeaders, id) {
 // 상담 신청
 async function handleConsultations(request, env, corsHeaders) {
   if (request.method === 'GET') {
-    const sampleConsultations = [
-      {
-        id: 1,
-        user_name: "김철수",
-        user_email: "kim@example.com",
-        user_phone: "010-1111-1111",
-        counselor_id: 1,
-        consultation_type: "개인상담",
-        preferred_date: "2024-01-15",
-        preferred_time: "14:00",
-        message: "스트레스 관리에 대해 상담받고 싶습니다.",
-        status: "pending",
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      }
-    ];
+    const logger = getLogger();
+    const db = getDatabase();
+    const startTime = Date.now();
     
-    return new Response(JSON.stringify({
-      consultations: sampleConsultations,
-      count: sampleConsultations.length
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    try {
+      logger.debug('Fetching consultations from database');
+      
+        // 실제 데이터베이스에서 상담 신청 목록 조회 (상담사 이름과 한국어 매핑 포함)
+        const consultations = await db.executeQuery(`
+          SELECT 
+            c.id, c.contact_name as user_name, c.contact_email as user_email, c.contact_phone as user_phone, 
+            c.counselor_id, c.consultation_type, c.urgency_level, c.description, 
+            c.preferred_date as scheduled_at, c.status, c.created_at, c.updated_at,
+            co.name as counselor_name,
+            ct.name_ko as consultation_type_ko,
+            ul.name_ko as urgency_level_ko,
+            cs.name_ko as status_ko,
+            cs.color_code as status_color
+          FROM consultations c
+          LEFT JOIN counselors co ON c.counselor_id = co.id
+          LEFT JOIN consultation_types ct ON c.consultation_type = ct.code
+          LEFT JOIN urgency_levels ul ON c.urgency_level = ul.code
+          LEFT JOIN consultation_statuses cs ON c.status = cs.code
+          ORDER BY c.created_at DESC
+        `);
+        
+        // 모든 데이터 정리 (Turso null 객체 처리)
+        const cleanedConsultations = cleanTursoData(consultations);
+        
+        const responseTime = Date.now() - startTime;
+        
+        logger.info('Successfully fetched consultations from database', {
+          count: cleanedConsultations.length,
+          responseTime: `${responseTime}ms`,
+          source: 'database'
+        });
+        
+        return createSuccessResponse({
+          consultations: cleanedConsultations,
+          count: cleanedConsultations.length
+        }, HTTP_STATUS.OK, corsHeaders);
+      
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
+      logger.error('Failed to fetch consultations from database', {
+        error: error.message,
+        responseTime: `${responseTime}ms`,
+        stack: error.stack
+      });
+      
+      // 오류 발생 시 빈 배열 반환
+      return createSuccessResponse({
+        consultations: [],
+        count: 0
+      }, HTTP_STATUS.OK, corsHeaders);
+    }
   } else if (request.method === 'POST') {
     const logger = getLogger();
     const startTime = Date.now();
@@ -554,7 +931,7 @@ async function handleConsultations(request, env, corsHeaders) {
       validatePhone(body.user_phone);
       
       if (body.counselor_id) {
-        validateId(body.counselor_id, 'counselor');
+        validateId(String(body.counselor_id), 'counselor');
       }
       
       logger.info('Validation passed for consultation request', {
@@ -562,25 +939,40 @@ async function handleConsultations(request, env, corsHeaders) {
         consultationType: body.consultation_type
       });
       
-      // 상담 신청 처리 (실제로는 데이터베이스에 저장)
-      const newConsultation = {
-        id: Date.now(),
-        ...body,
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // 실제 데이터베이스에 상담 신청 저장
+      const db = getDatabase();
+      const sql = `INSERT INTO consultations 
+        (contact_name, contact_email, contact_phone, counselor_id, consultation_type, 
+         urgency_level, description, preferred_date, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'), datetime('now'))`;
+      
+      const params = [
+        body.user_name,
+        body.user_email,
+        body.user_phone,
+        String(body.counselor_id), // 문자열로 변환
+        body.consultation_type,
+        body.urgency_level,
+        body.description,
+        body.scheduled_at
+      ];
+      
+      await db.executeQuery(sql, params);
+      
+      // 생성된 상담 신청 ID 조회
+      const result = await db.executeQuery('SELECT last_insert_rowid() as id');
+      const newConsultationId = result[0].id;
       
       const responseTime = Date.now() - startTime;
       
       logger.info('Consultation request created successfully', {
-        consultationId: newConsultation.id,
+        consultationId: newConsultationId,
         userEmail: body.user_email,
         responseTime: `${responseTime}ms`
       });
       
       return createSuccessResponse({
-        id: newConsultation.id,
+        id: newConsultationId,
         message: '상담 신청이 완료되었습니다.'
       }, HTTP_STATUS.CREATED, corsHeaders);
       
@@ -873,6 +1265,256 @@ async function handleMemoryOptimize(request, corsHeaders) {
     
   } catch (error) {
     logger.error('Failed to optimize memory', { error: error.message });
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 상담 상태 정의
+const CONSULTATION_STATUS = {
+  PENDING: 'PENDING',        // 대기중 (신청 접수)
+  REVIEWING: 'REVIEWING',    // 검토중 (상담사가 검토)
+  CONFIRMED: 'CONFIRMED',    // 확정됨 (상담사가 수락)
+  SCHEDULED: 'SCHEDULED',    // 일정 확정 (구체적 시간 확정)
+  IN_PROGRESS: 'IN_PROGRESS', // 진행중 (상담 시작)
+  COMPLETED: 'COMPLETED',    // 완료됨 (상담 종료)
+  CANCELLED: 'CANCELLED',    // 취소됨 (신청자 또는 상담사 취소)
+  REJECTED: 'REJECTED'       // 거절됨 (상담사가 거절)
+};
+
+// 상담 상태별 한글 표시
+const CONSULTATION_STATUS_LABELS = {
+  [CONSULTATION_STATUS.PENDING]: '대기중',
+  [CONSULTATION_STATUS.REVIEWING]: '검토중',
+  [CONSULTATION_STATUS.CONFIRMED]: '수락됨',
+  [CONSULTATION_STATUS.SCHEDULED]: '일정확정',
+  [CONSULTATION_STATUS.IN_PROGRESS]: '진행중',
+  [CONSULTATION_STATUS.COMPLETED]: '완료됨',
+  [CONSULTATION_STATUS.CANCELLED]: '취소됨',
+  [CONSULTATION_STATUS.REJECTED]: '거절됨'
+};
+
+// 상담 상태별 색상
+const CONSULTATION_STATUS_COLORS = {
+  [CONSULTATION_STATUS.PENDING]: 'bg-yellow-100 text-yellow-800',
+  [CONSULTATION_STATUS.REVIEWING]: 'bg-blue-100 text-blue-800',
+  [CONSULTATION_STATUS.CONFIRMED]: 'bg-green-100 text-green-800',
+  [CONSULTATION_STATUS.SCHEDULED]: 'bg-purple-100 text-purple-800',
+  [CONSULTATION_STATUS.IN_PROGRESS]: 'bg-orange-100 text-orange-800',
+  [CONSULTATION_STATUS.COMPLETED]: 'bg-gray-100 text-gray-800',
+  [CONSULTATION_STATUS.CANCELLED]: 'bg-red-100 text-red-800',
+  [CONSULTATION_STATUS.REJECTED]: 'bg-red-100 text-red-800'
+};
+
+// 데이터 정리 함수 - Turso의 null 객체를 실제 null로 변환
+function cleanTursoData(data) {
+  if (Array.isArray(data)) {
+    return data.map(item => cleanTursoData(item));
+  }
+  
+  if (data && typeof data === 'object') {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value && typeof value === 'object' && value.type === 'null') {
+        cleaned[key] = null;
+      } else if (typeof value === 'string' && (value === '[object Object]' || value === 'null')) {
+        cleaned[key] = null;
+      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        cleaned[key] = cleanTursoData(value);
+      } else {
+        cleaned[key] = value;
+      }
+    }
+    return cleaned;
+  }
+  
+  return data;
+}
+
+// 상담 상태 업데이트 처리
+async function handleUpdateConsultationStatus(request, env, corsHeaders, id) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    const body = await request.json();
+    
+    logger.debug('Updating consultation status', {
+      consultationId: id,
+      newStatus: body.status,
+      action: body.action
+    });
+    
+    // 입력 검증
+    validateId(id, 'consultation');
+    validateRequired(body.status, 'status');
+    
+    // 유효한 상태인지 확인
+    const validStatuses = Object.values(CONSULTATION_STATUS);
+    if (!validStatuses.includes(body.status)) {
+      throw new ValidationError('Invalid consultation status', {
+        provided: body.status,
+        validStatuses: validStatuses
+      });
+    }
+    
+    // 상담 신청 존재 여부 확인
+    const existingConsultation = await db.executeQuery(
+      'SELECT id, status, counselor_id FROM consultations WHERE id = ?',
+      [id]
+    );
+    
+    if (existingConsultation.length === 0) {
+      throw new NotFoundError('Consultation not found');
+    }
+    
+    const currentConsultation = existingConsultation[0];
+    
+    // 상태 전환 검증
+    const validTransitions = {
+      [CONSULTATION_STATUS.PENDING]: [CONSULTATION_STATUS.REVIEWING, CONSULTATION_STATUS.CANCELLED],
+      [CONSULTATION_STATUS.REVIEWING]: [CONSULTATION_STATUS.CONFIRMED, CONSULTATION_STATUS.REJECTED, CONSULTATION_STATUS.CANCELLED],
+      [CONSULTATION_STATUS.CONFIRMED]: [CONSULTATION_STATUS.SCHEDULED, CONSULTATION_STATUS.CANCELLED],
+      [CONSULTATION_STATUS.SCHEDULED]: [CONSULTATION_STATUS.IN_PROGRESS, CONSULTATION_STATUS.CANCELLED],
+      [CONSULTATION_STATUS.IN_PROGRESS]: [CONSULTATION_STATUS.COMPLETED, CONSULTATION_STATUS.CANCELLED],
+      [CONSULTATION_STATUS.COMPLETED]: [], // 완료된 상담은 더 이상 변경 불가
+      [CONSULTATION_STATUS.CANCELLED]: [], // 취소된 상담은 더 이상 변경 불가
+      [CONSULTATION_STATUS.REJECTED]: []   // 거절된 상담은 더 이상 변경 불가
+    };
+    
+    const currentStatus = currentConsultation.status;
+    const newStatus = body.status;
+    
+    if (!validTransitions[currentStatus]?.includes(newStatus)) {
+      throw new ValidationError('Invalid status transition', {
+        currentStatus: currentStatus,
+        newStatus: newStatus,
+        validTransitions: validTransitions[currentStatus] || []
+      });
+    }
+    
+    // 상태 업데이트
+    let updateSql = 'UPDATE consultations SET status = ?, updated_at = datetime("now")';
+    let params = [newStatus];
+    
+    // 특별한 상태별 추가 처리
+    if (newStatus === CONSULTATION_STATUS.SCHEDULED && body.scheduled_at) {
+      updateSql += ', preferred_date = ?';
+      params.push(body.scheduled_at);
+    }
+    
+    if (newStatus === CONSULTATION_STATUS.IN_PROGRESS) {
+      updateSql += ', started_at = datetime("now")';
+    }
+    
+    if (newStatus === CONSULTATION_STATUS.COMPLETED) {
+      updateSql += ', completed_at = datetime("now")';
+    }
+    
+    if (newStatus === CONSULTATION_STATUS.CANCELLED || newStatus === CONSULTATION_STATUS.REJECTED) {
+      updateSql += ', cancelled_at = datetime("now")';
+      if (body.reason) {
+        updateSql += ', cancellation_reason = ?';
+        params.push(body.reason);
+      }
+    }
+    
+    // WHERE 절 추가
+    updateSql += ' WHERE id = ?';
+    params.push(id);
+    
+    await db.executeQuery(updateSql, params);
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Consultation status updated successfully', {
+      consultationId: id,
+      oldStatus: currentStatus,
+      newStatus: newStatus,
+      responseTime: `${responseTime}ms`
+    });
+    
+    return createSuccessResponse({
+      id: id,
+      status: newStatus,
+      message: `상담 상태가 ${CONSULTATION_STATUS_LABELS[newStatus]}로 변경되었습니다.`
+    }, HTTP_STATUS.OK, corsHeaders);
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to update consultation status', {
+      consultationId: id,
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
+    return createErrorResponse(error, corsHeaders);
+  }
+}
+
+// 특정 상담 신청 조회
+async function handleConsultationById(request, env, corsHeaders, id) {
+  const logger = getLogger();
+  const db = getDatabase();
+  const startTime = Date.now();
+  
+  try {
+    logger.debug('Fetching consultation by ID from database', { consultationId: id });
+    
+    // 상담사 이름과 한국어 매핑과 함께 상담 신청 조회
+    const consultations = await db.executeQuery(`
+      SELECT 
+        c.id, c.contact_name as user_name, c.contact_email as user_email, c.contact_phone as user_phone, 
+        c.counselor_id, c.consultation_type, c.urgency_level, c.description, 
+        c.preferred_date as scheduled_at, c.status, c.created_at, c.updated_at,
+        co.name as counselor_name, co.email as counselor_email, co.phone as counselor_phone,
+        ct.name_ko as consultation_type_ko,
+        ul.name_ko as urgency_level_ko,
+        cs.name_ko as status_ko,
+        cs.color_code as status_color
+      FROM consultations c
+      LEFT JOIN counselors co ON c.counselor_id = co.id
+      LEFT JOIN consultation_types ct ON c.consultation_type = ct.code
+      LEFT JOIN urgency_levels ul ON c.urgency_level = ul.code
+      LEFT JOIN consultation_statuses cs ON c.status = cs.code
+      WHERE c.id = ?
+    `, [id]);
+    
+    if (consultations.length === 0) {
+      throw new NotFoundError('Consultation not found');
+    }
+    
+    const consultation = consultations[0];
+    
+    // 모든 데이터 정리 (Turso null 객체 처리)
+    const cleanedConsultation = cleanTursoData(consultation);
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info('Successfully fetched consultation by ID from database', {
+      consultationId: id,
+      status: cleanedConsultation.status,
+      responseTime: `${responseTime}ms`,
+      source: 'database'
+    });
+
+    return new Response(JSON.stringify(cleanedConsultation), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+    
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logger.error('Failed to fetch consultation by ID from database', {
+      consultationId: id,
+      error: error.message,
+      responseTime: `${responseTime}ms`,
+      stack: error.stack
+    });
+    
     return createErrorResponse(error, corsHeaders);
   }
 }

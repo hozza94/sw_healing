@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { ToastContainer } from "@/components/ui/toast";
+import { GlobalConfirmModal } from "@/components/ui/confirm-modal";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -37,6 +39,8 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <ToastContainer />
+          <GlobalConfirmModal />
         </div>
       </body>
     </html>

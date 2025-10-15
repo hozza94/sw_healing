@@ -87,18 +87,18 @@ function mapCounselorResponse(response: CounselorResponse): Counselor {
 export async function getCounselors(): Promise<{counselors: Counselor[], total: number, page: number, size: number} | null> {
   try {
     console.log('getCounselors 호출 시작'); // 디버깅 로그
-    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
+    const response = await apiClient.get<{success: boolean, data: {counselors: CounselorResponse[], total: number, page: number, size: number}, timestamp: string}>(API_ENDPOINTS.COUNSELORS);
     console.log('getCounselors API 응답 전체:', response); // 디버깅 로그
     console.log('getCounselors response.data:', response.data); // 디버깅 로그
     
-    // 백엔드 응답 구조: {data: [...], message: 'Success'}
-    if (response.data && Array.isArray(response.data)) {
-      console.log('getCounselors 성공 - 직접 배열 응답:', response.data); // 디버깅 로그
+    // 백엔드 응답 구조: {success: true, data: {counselors: [...], total: 5, page: 1, size: 5}, timestamp: "..."}
+    if (response.data && response.data.data && response.data.data.counselors) {
+      console.log('getCounselors 성공 - 새로운 구조 응답:', response.data.data.counselors); // 디버깅 로그
       return {
-        counselors: response.data.map(mapCounselorResponse),
-        total: response.data.length,
-        page: 1,
-        size: response.data.length
+        counselors: response.data.data.counselors.map(mapCounselorResponse),
+        total: response.data.data.total,
+        page: response.data.data.page,
+        size: response.data.data.size
       };
     }
     
@@ -185,10 +185,13 @@ export async function getCounselors(): Promise<{counselors: Counselor[], total: 
 // 승인된 상담사 목록 가져오기 (일반 사용자용)
 export async function getApprovedCounselors(): Promise<Counselor[]> {
   try {
-    const response = await apiClient.get<{counselors: CounselorResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.COUNSELORS);
+    console.log('getApprovedCounselors 호출 시작');
+    const response = await apiClient.get<{success: boolean, data: {counselors: CounselorResponse[], total: number, page: number, size: number}, timestamp: string}>(API_ENDPOINTS.COUNSELORS);
+    console.log('getApprovedCounselors API 응답:', response);
     
-    // 백엔드 응답 구조에서 counselors 배열을 추출하고 매핑
-    const counselors = response.data?.counselors || [];
+    // 백엔드 응답 구조: {success: true, data: {counselors: [...], total: 5, page: 1, size: 5}, timestamp: "..."}
+    const counselors = response.data?.data?.counselors || [];
+    console.log('추출된 counselors:', counselors);
     return counselors.map(mapCounselorResponse);
   } catch (error) {
     console.error('상담사 목록을 가져오는데 실패했습니다:', error);
@@ -264,29 +267,86 @@ export async function getCounselor(id: string): Promise<Counselor | null> {
 // 상담사 생성 (관리자용)
 export async function createCounselor(data: CreateCounselorRequest): Promise<Counselor | null> {
   try {
-    const response = await apiClient.post<CounselorResponse>(API_ENDPOINTS.COUNSELORS, data);
-    return response.data ? mapCounselorResponse(response.data) : null;
+    console.log('createCounselor 호출 시작:', data);
+    const response = await apiClient.post<{success: boolean, data: {id: number, message: string}, timestamp: string}>(API_ENDPOINTS.COUNSELORS, data);
+    console.log('createCounselor API 응답:', response);
+    
+    if (response.data && response.data.data) {
+      console.log('상담사 생성 성공:', response.data.data);
+      // 생성된 상담사 정보를 반환하기 위해 임시 객체 생성
+      const newCounselor: Counselor = {
+        id: response.data.data.id.toString(),
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        specialization: data.specialization,
+        experience: data.experience,
+        education: data.education,
+        certification: data.certification,
+        bio: data.bio,
+        profile_image: data.profile_image,
+        is_online: false,
+        is_active: true,
+        rating: 0,
+        total_reviews: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      return newCounselor;
+    }
+    
+    return null;
   } catch (error) {
     console.error('상담사 생성에 실패했습니다:', error);
-    return null;
+    throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록 함
   }
 }
 
 // 상담사 정보 수정 (관리자용)
 export async function updateCounselor(data: UpdateCounselorRequest): Promise<Counselor | null> {
   try {
-    const response = await apiClient.put<CounselorResponse>(API_ENDPOINTS.COUNSELOR(data.id), data);
-    return response.data ? mapCounselorResponse(response.data) : null;
+    console.log('updateCounselor 호출 시작:', data);
+    const response = await apiClient.put<{success: boolean, data: {message: string}, timestamp: string}>(API_ENDPOINTS.COUNSELOR(data.id), data);
+    console.log('updateCounselor API 응답:', response);
+    
+    if (response.data && response.data.data) {
+      console.log('상담사 수정 성공:', response.data.data);
+      // 수정된 상담사 정보를 반환하기 위해 임시 객체 생성
+      const updatedCounselor: Counselor = {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        specialization: data.specialization,
+        experience: data.experience,
+        education: data.education,
+        certification: data.certification,
+        bio: data.bio,
+        profile_image: data.profile_image,
+        is_online: false,
+        is_active: true,
+        rating: 0,
+        total_reviews: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      return updatedCounselor;
+    }
+    
+    return null;
   } catch (error) {
     console.error('상담사 정보 수정에 실패했습니다:', error);
-    return null;
+    throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록 함
   }
 }
 
 // 상담사 삭제 (관리자용)
 export async function deleteCounselor(id: string): Promise<boolean> {
   try {
-    await apiClient.delete(API_ENDPOINTS.COUNSELOR(id));
+    console.log('deleteCounselor 호출 시작:', id);
+    console.log('삭제 API 엔드포인트:', API_ENDPOINTS.COUNSELOR(id));
+    const response = await apiClient.delete(API_ENDPOINTS.COUNSELOR(id));
+    console.log('deleteCounselor API 응답:', response);
     return true;
   } catch (error) {
     console.error('상담사 삭제에 실패했습니다:', error);

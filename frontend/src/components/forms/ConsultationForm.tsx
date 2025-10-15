@@ -101,7 +101,14 @@ export default function ConsultationForm({ counselorId }: ConsultationFormProps)
         consultation_type: formData.consultation_type,
         urgency_level: formData.urgency_level,
         description: formData.description,
-        scheduled_at: scheduledAt
+        scheduled_at: scheduledAt,
+        user_name: formData.contact_name,
+        user_email: formData.contact_email,
+        user_phone: formData.contact_phone,
+        title: formData.title,
+        preferred_date: formData.preferred_date,
+        preferred_time: formData.preferred_time,
+        is_confidential: formData.is_confidential
       };
       
       console.log('전송할 데이터:', consultationData);

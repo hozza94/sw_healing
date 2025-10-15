@@ -134,7 +134,7 @@ export function createSuccessResponse(data, statusCode = HTTP_STATUS.OK, corsHea
   const performanceHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'public, max-age=300',
-    'ETag': `"${btoa(jsonString).slice(0, 16)}"`,
+    'ETag': `"${Date.now().toString(36)}"`,
     'X-Response-Time': Date.now().toString()
   };
 

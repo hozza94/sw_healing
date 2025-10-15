@@ -61,8 +61,24 @@ function mapNoticeResponse(response: NoticeResponse): Notice {
 // 모든 공지사항 목록 가져오기 (관리자용)
 export async function getNotices(): Promise<{notices: Notice[], total: number, page: number, size: number} | null> {
   try {
-    const response = await apiClient.get<{notices: NoticeResponse[], total: number, page: number, size: number}>(API_ENDPOINTS.NOTICES);
-    if (response.data) {
+    console.log('getNotices 호출 시작');
+    const response = await apiClient.get<{success: boolean, data: {notices: NoticeResponse[], total: number, page: number, size: number}, timestamp: string}>(API_ENDPOINTS.NOTICES);
+    console.log('getNotices API 응답:', response);
+    
+    // 백엔드 응답 구조: {success: true, data: {notices: [...], total: 5, page: 1, size: 5}, timestamp: "..."}
+    if (response.data && response.data.data && response.data.data.notices) {
+      console.log('getNotices 성공 - 새로운 구조 응답:', response.data.data.notices);
+      return {
+        notices: response.data.data.notices.map(mapNoticeResponse),
+        total: response.data.data.total,
+        page: response.data.data.page,
+        size: response.data.data.size
+      };
+    }
+    
+    // 기존 구조: {data: {notices: [...], total: 5, page: 1, size: 10}}
+    if (response.data && response.data.notices) {
+      console.log('getNotices 성공 - 기존 구조 응답:', response.data.notices);
       return {
         notices: response.data.notices.map(mapNoticeResponse),
         total: response.data.total,
@@ -70,6 +86,8 @@ export async function getNotices(): Promise<{notices: Notice[], total: number, p
         size: response.data.size
       };
     }
+    
+    console.log('getNotices 실패 - 지원되지 않는 응답 구조');
     return null;
   } catch (error) {
     console.error('공지사항 목록을 가져오는데 실패했습니다:', error);

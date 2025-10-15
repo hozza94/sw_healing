@@ -10,10 +10,10 @@ export function generateCacheKey(prefix, ...params) {
 
 // 캐시 TTL 상수 (초)
 export const CACHE_TTL = {
-  COUNSELORS: 3600,      // 1시간
-  NOTICES: 1800,         // 30분
-  REVIEWS: 1800,         // 30분
-  CONSULTATIONS: 300,    // 5분
+  COUNSELORS: 0,         // 캐시 비활성화 (실시간 업데이트 필요)
+  NOTICES: 1800,         // 30분 (정적 데이터)
+  REVIEWS: 0,            // 캐시 비활성화 (실시간 업데이트 필요)
+  CONSULTATIONS: 0,      // 캐시 비활성화 (실시간 업데이트 필요)
   HEALTH: 60,            // 1분
   METRICS: 30            // 30초
 };
@@ -356,33 +356,27 @@ export function getCache() {
 
 // 캐시 유틸리티 함수들
 export async function cacheCounselors(cache, counselors) {
-  const key = generateCacheKey('counselors', 'all');
-  return await cache.set(key, counselors, CACHE_TTL.COUNSELORS);
+  return null; // 캐시 완전 비활성화
 }
 
 export async function getCachedCounselors(cache) {
-  const key = generateCacheKey('counselors', 'all');
-  return await cache.get(key, CACHE_TTL.COUNSELORS);
+  return null; // 캐시 완전 비활성화
 }
 
 export async function cacheNotices(cache, notices) {
-  const key = generateCacheKey('notices', 'all');
-  return await cache.set(key, notices, CACHE_TTL.NOTICES);
+  return null; // 캐시 완전 비활성화
 }
 
 export async function getCachedNotices(cache) {
-  const key = generateCacheKey('notices', 'all');
-  return await cache.get(key, CACHE_TTL.NOTICES);
+  return null; // 캐시 완전 비활성화
 }
 
 export async function cacheReviews(cache, reviews) {
-  const key = generateCacheKey('reviews', 'all');
-  return await cache.set(key, reviews, CACHE_TTL.REVIEWS);
+  return null; // 캐시 완전 비활성화
 }
 
 export async function getCachedReviews(cache) {
-  const key = generateCacheKey('reviews', 'all');
-  return await cache.get(key, CACHE_TTL.REVIEWS);
+  return null; // 캐시 완전 비활성화
 }
 
 // 캐시 무효화 함수들
